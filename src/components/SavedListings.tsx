@@ -271,9 +271,9 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
               Delete Selected
             </Button>
           ) : (
-            <Button variant="outline" size="sm" onClick={onClear}>
-              Clear All
-            </Button>
+          <Button variant="outline" size="sm" onClick={onClear}>
+            Clear All
+          </Button>
           )}
         </div>
       </CardHeader>
@@ -375,29 +375,29 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
 
           {/* Main content area */}
           <div className="flex-1">
-            {viewMode === 'grid' ? (
+        {viewMode === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredAndSortedListings.map((listing, index) => {
-                  const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
-                  const rating = getRatingFromScore(valueScore);
+              const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
+              const rating = getRatingFromScore(valueScore);
                   const pricePerMile = calculatePricePerRemainingMile(listing.price, listing.mileage, listing.make);
                   const lifetimeMiles = getEstimatedLifetimeMiles(listing.make);
                   const remainingMiles = Math.max(0, lifetimeMiles - listing.mileage);
 
-                  return (
-                    <div
-                      key={index}
+              return (
+                <div
+                  key={index}
                       className={`p-4 rounded-lg ${selectedIndices.includes(index) ? 'bg-blue-50' : 'bg-gray-50'} hover:bg-gray-100 flex flex-col gap-2`}
-                    >
-                      <div className="flex justify-between items-start">
+                >
+                  <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2">
                           <Checkbox
                             checked={selectedIndices.includes(index)}
                             onCheckedChange={() => handleSelect(index)}
                           />
-                          <h3 className="font-medium">
-                            {listing.year} {listing.make} {listing.model}
-                          </h3>
+                    <h3 className="font-medium">
+                      {listing.year} {listing.make} {listing.model}
+                    </h3>
                         </div>
                         <div className="flex gap-2">
                           <Button
@@ -407,40 +407,40 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          {listing.url && (
-                            <a
-                              href={listing.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          )}
+                    {listing.url && (
+                      <a
+                        href={listing.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    )}
                         </div>
-                      </div>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <p>{formatCurrency(listing.price)} • {formatNumber(listing.mileage)} miles</p>
+                  </div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>{formatCurrency(listing.price)} • {formatNumber(listing.mileage)} miles</p>
                         <p>Remaining miles: {formatNumber(remainingMiles)}</p>
                         <p>Price per remaining mile: {pricePerMile > 0 ? `$${pricePerMile.toFixed(2)}` : 'N/A'}</p>
-                        <div className="flex items-center gap-1">
-                          Score: {rating}
-                          {valueScore < 0.3 ? (
-                            <TrendingDown className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <TrendingUp className="h-4 w-4 text-red-600" />
-                          )}
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-1">
+                      Score: {rating}
+                      {valueScore < 0.3 ? (
+                        <TrendingDown className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <TrendingUp className="h-4 w-4 text-red-600" />
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
+          <Table>
+            <TableHeader>
+              <TableRow>
                       <TableHead className="w-12">
                         <Checkbox
                           checked={selectedIndices.length === filteredAndSortedListings.length}
@@ -465,18 +465,18 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
                       <TableHead>
                         Actions
                       </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
                     {filteredAndSortedListings.map((listing, index) => {
-                      const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
-                      const rating = getRatingFromScore(valueScore);
+                const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
+                const rating = getRatingFromScore(valueScore);
                       const pricePerMile = calculatePricePerRemainingMile(listing.price, listing.mileage, listing.make);
                       const lifetimeMiles = getEstimatedLifetimeMiles(listing.make);
                       const remainingMiles = Math.max(0, lifetimeMiles - listing.mileage);
 
-                      return (
-                        <TableRow key={index}>
+                return (
+                  <TableRow key={index}>
                           <TableCell>
                             <Checkbox
                               checked={selectedIndices.includes(index)}
@@ -485,28 +485,28 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              {listing.year} {listing.make} {listing.model}
+                      {listing.year} {listing.make} {listing.model}
                               {listing.url && (
                                 <a href={listing.url} target="_blank" rel="noopener noreferrer">
                                   <ExternalLink className="h-4 w-4 text-blue-600 hover:text-blue-800" />
                                 </a>
                               )}
                             </div>
-                          </TableCell>
-                          <TableCell>{formatCurrency(listing.price)}</TableCell>
-                          <TableCell>{formatNumber(listing.mileage)}</TableCell>
+                    </TableCell>
+                    <TableCell>{formatCurrency(listing.price)}</TableCell>
+                    <TableCell>{formatNumber(listing.mileage)}</TableCell>
                           <TableCell>{pricePerMile > 0 ? `$${pricePerMile.toFixed(2)}` : 'N/A'}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              {rating}
-                              {valueScore < 0.3 ? (
-                                <TrendingDown className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <TrendingUp className="h-4 w-4 text-red-600" />
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {rating}
+                        {valueScore < 0.3 ? (
+                          <TrendingDown className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <TrendingUp className="h-4 w-4 text-red-600" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -514,14 +514,14 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
               </div>
-            )}
+        )}
           </div>
         </div>
       </CardContent>
