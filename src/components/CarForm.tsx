@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { CAR_MAKES, getModelsByMake } from "@/data/carData";
-import { toast } from "@/components/ui/sonner"; // Adding toast for better error feedback
+import { toast } from "@/components/ui/sonner";
+import { Link } from "lucide-react";
 
 export interface CarFormData {
   make: string;
@@ -13,6 +14,7 @@ export interface CarFormData {
   year: number;
   price: number;
   mileage: number;
+  url?: string;
 }
 
 interface CarFormProps {
@@ -25,8 +27,9 @@ export function CarForm({ onSubmit }: CarFormProps) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [price, setPrice] = useState(0);
   const [mileage, setMileage] = useState(0);
+  const [url, setUrl] = useState("");
   const [availableModels, setAvailableModels] = useState<string[]>([]);
-  
+
   // Update available models when make changes
   useEffect(() => {
     if (make) {
@@ -62,8 +65,17 @@ export function CarForm({ onSubmit }: CarFormProps) {
       model,
       year,
       price,
-      mileage
+      mileage,
+      url: url.trim() || undefined
     });
+
+    // Clear form after submission
+    setMake("");
+    setModel("");
+    setYear(new Date().getFullYear());
+    setPrice(0);
+    setMileage(0);
+    setUrl("");
   };
 
   const currentYear = new Date().getFullYear();
@@ -168,12 +180,27 @@ export function CarForm({ onSubmit }: CarFormProps) {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="url">Listing URL (optional)</Label>
+            <div className="relative">
+              <Input
+                id="url"
+                type="url"
+                placeholder="https://..."
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="w-full pl-9"
+              />
+              <Link className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+            </div>
+          </div>
+
           <Button 
             type="submit" 
             className="w-full bg-blue-700 hover:bg-blue-800 text-white"
             disabled={!make || !model || !year || !price || !mileage}
           >
-            Calculate Value
+            Save Listing
           </Button>
         </form>
       </CardContent>
