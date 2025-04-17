@@ -321,8 +321,7 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
                   onValueChange={handlePriceChange}
                   className="w-full"
                   colorRanges={[
-                    { value: priceToSlider(30000), color: 'rgb(34 197 94)' },  // green-500
-                    { value: 100, color: 'rgb(234 179 8)' }  // yellow-500
+                    { value: 100, color: 'rgb(0, 0, 0)' }
                   ]}
                 />
                 <div className="flex justify-between text-sm text-gray-500">
