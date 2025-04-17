@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { CarForm, CarFormData } from "./CarForm";
 import { ResultsDisplay } from "./ResultsDisplay";
@@ -39,7 +38,6 @@ export function CarValueCalculator() {
         <div className="flex flex-col items-center space-y-6">
           <h2 className="text-2xl font-bold mb-6 text-blue-800">Enter Car Details</h2>
           <CarForm onSubmit={handleFormSubmit} />
-          <SavedListings listings={savedListings} onClear={handleClearListings} />
         </div>
         
         <div className="flex flex-col items-center">
@@ -54,6 +52,9 @@ export function CarValueCalculator() {
             </div>
           )}
         </div>
+      </div>
+      <div className="mt-8">
+        <SavedListings listings={savedListings} onClear={handleClearListings} />
       </div>
     </div>
   );
