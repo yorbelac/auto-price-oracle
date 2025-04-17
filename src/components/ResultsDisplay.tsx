@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   calculateValueScore, 
@@ -9,6 +8,7 @@ import {
 } from "@/utils/carCalculations";
 import { CarFormData } from "./CarForm";
 import { Progress } from "@/components/ui/progress";
+import { MaxMileageModal } from "./MaxMileageModal";
 
 interface ResultsDisplayProps {
   carData: CarFormData;
@@ -26,7 +26,7 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
   const rating = getRatingFromScore(valueScore);
   
   // Get maximum mileage for this make
-  const maxMileage = MAX_MILEAGE_BY_MAKE[carData.make.toLowerCase()] || 200000;
+  const maxMileage = MAX_MILEAGE_BY_MAKE[carData.make.toLowerCase()] || 250000;
   
   // Calculate remaining mileage
   const remainingMiles = Math.max(0, maxMileage - carData.mileage);
@@ -65,10 +65,27 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
         
         <div className="space-y-1">
           <div className="flex justify-between text-sm">
-            <span>Vehicle Life Used</span>
-            <span>{lifeUsedPercentage}%</span>
+            <span>Vehicle Life</span>
+            <div className="flex items-center">
+              <span>{formatNumber(carData.mileage)} / {formatNumber(maxMileage)} miles</span>
+              <MaxMileageModal />
+            </div>
           </div>
-          <Progress value={lifeUsedPercentage} className="h-2" />
+          <div className="relative pt-2 pb-2">
+            <Progress 
+              value={Math.min(100, (carData.mileage / maxMileage) * 100)} 
+              className="h-2"
+            />
+            <div 
+              className="absolute h-4 w-0.5 bg-red-500 -bottom-1"
+              style={{ left: `${(maxMileage / Math.max(maxMileage, carData.mileage)) * 100}%` }}
+            />
+          </div>
+          {carData.mileage > maxMileage && (
+            <div className="text-sm text-red-500 mt-1">
+              This vehicle has exceeded its estimated maximum life by {formatNumber(carData.mileage - maxMileage)} miles
+            </div>
+          )}
         </div>
         
         <div className="grid grid-cols-2 gap-4 py-4">
@@ -91,7 +108,7 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
           </p>
         </div>
         
-        <div className="text-sm text-gray-500 mt-4">
+        <div className="text-sm text-gray-500">
           <p>
             This score is calculated based on the car's price divided by its remaining estimated life.
             A lower score indicates better value for money.

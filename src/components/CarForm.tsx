@@ -19,63 +19,98 @@ export interface CarFormData {
 
 interface CarFormProps {
   onSubmit: (data: CarFormData) => void;
+  initialData?: CarFormData;
 }
 
-export function CarForm({ onSubmit }: CarFormProps) {
-  const [make, setMake] = useState("");
-  const [model, setModel] = useState("");
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [price, setPrice] = useState(0);
-  const [mileage, setMileage] = useState(0);
-  const [url, setUrl] = useState("");
+export function CarForm({ onSubmit, initialData }: CarFormProps) {
+  const [formData, setFormData] = useState<CarFormData>({
+    make: initialData?.make || "",
+    model: initialData?.model || "",
+    year: initialData?.year || new Date().getFullYear(),
+    price: initialData?.price || 0,
+    mileage: initialData?.mileage || 0,
+    url: initialData?.url || "",
+  });
   const [availableModels, setAvailableModels] = useState<string[]>([]);
 
   // Update available models when make changes
   useEffect(() => {
-    if (make) {
-      const models = getModelsByMake(make);
+    if (formData.make) {
+      const models = getModelsByMake(formData.make);
       setAvailableModels(models);
-      setModel(models.length > 0 ? models[0] : "");
+      // Only reset model if we're not editing and the current model isn't in the new list
+      if (!initialData && (!formData.model || !models.includes(formData.model))) {
+        setFormData(prev => ({ ...prev, model: models[0] || '' }));
+      }
     } else {
       setAvailableModels([]);
-      setModel("");
+      setFormData(prev => ({ ...prev, model: '' }));
     }
-  }, [make]);
+  }, [formData.make, initialData]);
+
+  // Update form fields when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      // First set the make
+      setFormData(prev => ({ ...prev, make: initialData.make }));
+      
+      // Then get the available models for the make
+      const models = getModelsByMake(initialData.make);
+      setAvailableModels(models);
+      
+      // Finally set the rest of the form data including the model
+      // This ensures the model is set after the available models are populated
+      setTimeout(() => {
+        setFormData(prev => ({
+          ...prev,
+          model: initialData.model,
+          year: initialData.year,
+          mileage: initialData.mileage,
+          price: initialData.price,
+          url: initialData.url || '',
+        }));
+      }, 0);
+    }
+  }, [initialData]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Form Data:', formData);
+    console.log('Available Models:', availableModels);
+    console.log('Initial Data:', initialData);
+  }, [formData, availableModels, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Enhanced validation with toast notifications
-    if (price < 500) {
+    if (formData.price < 500) {
       toast.error("Price too low", {
         description: "Car price must be at least $500."
       });
       return;
     }
 
-    if (price > 1000000) {
+    if (formData.price > 1000000) {
       toast.error("Price too high", {
         description: "Car price cannot exceed $1,000,000."
       });
       return;
     }
 
-    onSubmit({
-      make,
-      model,
-      year,
-      price,
-      mileage,
-      url: url.trim() || undefined
-    });
+    onSubmit(formData);
 
-    // Clear form after submission
-    setMake("");
-    setModel("");
-    setYear(new Date().getFullYear());
-    setPrice(0);
-    setMileage(0);
-    setUrl("");
+    // Only clear form if we're not editing
+    if (!initialData) {
+      setFormData({
+        make: "",
+        model: "",
+        year: new Date().getFullYear(),
+        price: 0,
+        mileage: 0,
+        url: "",
+      });
+    }
   };
 
   const currentYear = new Date().getFullYear();
@@ -88,17 +123,16 @@ export function CarForm({ onSubmit }: CarFormProps) {
           <div className="space-y-2">
             <Label htmlFor="make">Make</Label>
             <Select
-              value={make}
-              onValueChange={setMake}
-              required
+              value={formData.make}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, make: value }))}
             >
-              <SelectTrigger id="make" className="w-full">
+              <SelectTrigger id="make">
                 <SelectValue placeholder="Select make" />
               </SelectTrigger>
-              <SelectContent>
-                {CAR_MAKES.map((carMake) => (
-                  <SelectItem key={carMake.name} value={carMake.name}>
-                    {carMake.name}
+              <SelectContent position="popper" side="bottom" align="start" className="max-h-[300px]">
+                {CAR_MAKES.map(make => (
+                  <SelectItem key={make.name} value={make.name}>
+                    {make.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -108,15 +142,15 @@ export function CarForm({ onSubmit }: CarFormProps) {
           <div className="space-y-2">
             <Label htmlFor="model">Model</Label>
             <Select
-              value={model}
-              onValueChange={setModel}
-              disabled={!make || availableModels.length === 0}
+              value={formData.model}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, model: value }))}
+              disabled={!formData.make || availableModels.length === 0}
               required
             >
               <SelectTrigger id="model" className="w-full">
                 <SelectValue placeholder="Select model" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" side="bottom" align="start" className="max-h-[300px]">
                 {availableModels.map((modelName) => (
                   <SelectItem key={modelName} value={modelName}>
                     {modelName}
@@ -129,14 +163,14 @@ export function CarForm({ onSubmit }: CarFormProps) {
           <div className="space-y-2">
             <Label htmlFor="year">Year</Label>
             <Select
-              value={year.toString()}
-              onValueChange={(value) => setYear(parseInt(value))}
+              value={formData.year.toString()}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, year: parseInt(value) }))}
               required
             >
               <SelectTrigger id="year" className="w-full">
                 <SelectValue placeholder="Select year" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" side="bottom" align="start" className="max-h-[300px]">
                 {years.map((year) => (
                   <SelectItem key={year} value={year.toString()}>
                     {year}
@@ -155,10 +189,10 @@ export function CarForm({ onSubmit }: CarFormProps) {
               max="1000000"
               step="100"
               placeholder="Car value (e.g. 25000)"
-              value={price || ""}
+              value={formData.price || ""}
               onChange={(e) => {
                 const value = parseInt(e.target.value) || 0;
-                setPrice(Math.max(0, Math.min(value, 1000000)));
+                setFormData(prev => ({ ...prev, price: Math.max(0, Math.min(value, 1000000)) }));
               }}
               required
               className="w-full"
@@ -173,8 +207,8 @@ export function CarForm({ onSubmit }: CarFormProps) {
               min="0"
               step="100"
               placeholder="50000"
-              value={mileage || ""}
-              onChange={(e) => setMileage(parseInt(e.target.value) || 0)}
+              value={formData.mileage || ""}
+              onChange={(e) => setFormData(prev => ({ ...prev, mileage: parseInt(e.target.value) || 0 }))}
               required
               className="w-full"
             />
@@ -187,8 +221,8 @@ export function CarForm({ onSubmit }: CarFormProps) {
                 id="url"
                 type="url"
                 placeholder="https://..."
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                value={formData.url || ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
                 className="w-full pl-9"
               />
               <Link className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
@@ -198,9 +232,9 @@ export function CarForm({ onSubmit }: CarFormProps) {
           <Button 
             type="submit" 
             className="w-full bg-blue-700 hover:bg-blue-800 text-white"
-            disabled={!make || !model || !year || !price || !mileage}
+            disabled={!formData.make || !formData.model || !formData.year || !formData.price || !formData.mileage}
           >
-            Save Listing
+            {initialData ? "Update Listing" : "Save Listing"}
           </Button>
         </form>
       </CardContent>

@@ -1,4 +1,3 @@
-
 // Car value calculation utilities
 
 // Default maximum mileage for different car types (in miles)
@@ -61,11 +60,11 @@ export function calculateValueScore(
  * @returns A string rating from "Excellent" to "Poor"
  */
 export function getRatingFromScore(valueScore: number): string {
-  if (valueScore < 0.1) return "Excellent";
-  if (valueScore < 0.2) return "Very Good";
-  if (valueScore < 0.3) return "Good";
-  if (valueScore < 0.5) return "Fair";
-  if (valueScore < 0.8) return "Below Average";
+  if (valueScore < 0.08) return "Excellent";
+  if (valueScore < 0.15) return "Very Good";
+  if (valueScore < 0.25) return "Good";
+  if (valueScore < 0.40) return "Fair";
+  if (valueScore < 0.60) return "Below Average";
   return "Poor";
 }
 
@@ -86,4 +85,14 @@ export function formatCurrency(amount: number): string {
  */
 export function formatNumber(num: number): string {
   return new Intl.NumberFormat('en-US').format(num);
+}
+
+/**
+ * Get the estimated lifetime miles for a given car make
+ * @param make Car make to look up
+ * @returns Estimated lifetime miles for the make
+ */
+export function getEstimatedLifetimeMiles(make: string): number {
+  const makeNormalized = make.toLowerCase().trim();
+  return MAX_MILEAGE_BY_MAKE[makeNormalized] || DEFAULT_MAX_MILEAGE;
 }

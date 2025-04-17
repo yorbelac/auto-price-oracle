@@ -1,4 +1,3 @@
-
 // Sample car makes and models data
 
 export interface CarMake {
@@ -17,7 +16,7 @@ export const CAR_MAKES: CarMake[] = [
   },
   {
     name: "Ford",
-    models: ["F-150", "Escape", "Explorer", "Mustang", "Edge", "Ranger", "Bronco", "Expedition"]
+    models: ["F-150", "Escape", "Explorer", "Mustang", "Edge", "Ranger", "Bronco", "Expedition", "Taurus", "Focus"]
   },
   {
     name: "Chevrolet",
@@ -66,6 +65,10 @@ export const CAR_MAKES: CarMake[] = [
   {
     name: "Jeep",
     models: ["Grand Cherokee", "Wrangler", "Cherokee", "Compass", "Renegade", "Gladiator", "Wagoneer"]
+  },
+  {
+    name: "GMC",
+    models: ["Sierra", "Yukon", "Acadia", "Terrain", "Canyon", "Savana", "Hummer EV"]
   }
 ];
 
