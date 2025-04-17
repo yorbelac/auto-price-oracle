@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { CAR_MAKES, getModelsByMake } from "@/data/carData";
+import { toast } from "@/components/ui/sonner"; // Adding toast for better error feedback
 
 export interface CarFormData {
   make: string;
@@ -41,6 +41,22 @@ export function CarForm({ onSubmit }: CarFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Enhanced validation with toast notifications
+    if (price < 500) {
+      toast.error("Price too low", {
+        description: "Car price must be at least $500."
+      });
+      return;
+    }
+
+    if (price > 1000000) {
+      toast.error("Price too high", {
+        description: "Car price cannot exceed $1,000,000."
+      });
+      return;
+    }
+
     onSubmit({
       make,
       model,
@@ -123,11 +139,15 @@ export function CarForm({ onSubmit }: CarFormProps) {
             <Input
               id="price"
               type="number"
-              min="1"
+              min="500"
+              max="1000000"
               step="100"
-              placeholder="25000"
+              placeholder="Car value (e.g. 25000)"
               value={price || ""}
-              onChange={(e) => setPrice(parseInt(e.target.value) || 0)}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || 0;
+                setPrice(Math.max(0, Math.min(value, 1000000)));
+              }}
               required
               className="w-full"
             />
