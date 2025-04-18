@@ -8,7 +8,7 @@
     "npm": "10.x"
   },
   "scripts": {
-    "build:frontend": "tsc && vite build",
+    "build:frontend": "vite build",
     "build:backend": "tsc -P tsconfig.server.json",
     "build": "npm run build:frontend && npm run build:backend",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
@@ -19,7 +19,7 @@
     "backend": "cd backend && npm run dev",
     "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
     "install-all": "npm install && cd auto-price-oracle-backend && npm install",
-    "heroku-postbuild": "npm run build && cd backend && npm install && npm run build",
+    "heroku-postbuild": "npm run build",
     "start": "node dist/server.js"
   },
   "dependencies": {

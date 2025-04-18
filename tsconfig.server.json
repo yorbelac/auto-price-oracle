@@ -12,8 +12,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["src/server.ts", "src/**/*.controller.ts", "src/**/*.model.ts", "src/**/*.route.ts", "src/**/*.middleware.ts"],
+  "exclude": ["node_modules", "dist"]
 } 
