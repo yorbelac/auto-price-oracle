@@ -1,26 +1,23 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
-import Index from "./pages/Index";
+import React from 'react'
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom"
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient()
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
       <HashRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* Redirect all unknown routes to home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <div className="app">
+          <h1>Auto Price Oracle</h1>
+          <Routes>
+            <Route path="/" element={<div>Home Page</div>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
       </HashRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  )
+}
 
-export default App;
+export default App
