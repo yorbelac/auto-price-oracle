@@ -27,8 +27,13 @@ if (process.env.NODE_ENV === 'production') {
   // Serve static files from the dist directory
   app.use(express.static(path.join(__dirname, '../dist')));
   
-  // Handle client-side routing for BrowserRouter
-  app.get('*', (req, res) => {
+  // Handle client-side routing
+  app.get('*', (req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    // Serve index.html for all other routes
     res.sendFile(path.join(__dirname, '../dist/index.html'));
   });
 }

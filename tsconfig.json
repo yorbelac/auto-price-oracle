@@ -23,6 +23,6 @@
     }
   },
   "include": ["src/**/*.tsx", "src/**/*.ts"],
-  "exclude": ["src/server.ts", "src/**/*.server.ts", "src/**/*.controller.ts", "src/**/*.model.ts", "src/**/*.route.ts"],
+  "exclude": ["backend", "node_modules"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
