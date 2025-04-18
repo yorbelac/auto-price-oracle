@@ -13,25 +13,25 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
-
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the dist directory
-  app.use(express.static(path.join(__dirname, '../dist')));
-  
-  // Handle client-side routing
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
-  });
-}
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the dist directory
+  app.use(express.static(path.join(__dirname, '../dist')));
+  
+  // Handle client-side routing - must be after static file serving
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
+  });
+}
 
 // MongoDB Connection
 const connectDB = async () => {
