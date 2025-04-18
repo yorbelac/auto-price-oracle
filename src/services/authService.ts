@@ -24,19 +24,59 @@ export interface AuthResponse {
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await axios.post(`${API_URL}/auth/login`, credentials);
-    return response.data;
+    try {
+      console.log('Attempting login with URL:', `${API_URL}/auth/login`);
+      const response = await axios.post(`${API_URL}/auth/login`, credentials, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      console.log('Login response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Login error:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+      throw error;
+    }
   },
 
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
-    const response = await axios.post(`${API_URL}/auth/register`, credentials);
-    return response.data;
+    try {
+      const response = await axios.post(`${API_URL}/auth/register`, credentials, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Register error:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+      throw error;
+    }
   },
 
   async getCurrentUser(token: string): Promise<AuthResponse['user']> {
-    const response = await axios.get(`${API_URL}/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    return response.data;
+    try {
+      const response = await axios.get(`${API_URL}/auth/me`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Get current user error:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+      throw error;
+    }
   },
 }; 

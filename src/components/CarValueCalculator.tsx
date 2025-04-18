@@ -22,11 +22,13 @@ export const CarValueCalculator = () => {
     try {
       setIsLoading(true);
       const listings = await carService.getCars();
-      setSavedListings(listings || []);
+      // Ensure listings is always an array
+      setSavedListings(Array.isArray(listings) ? listings : []);
       setError(null);
     } catch (err) {
       console.error(err);
       setError('Failed to connect to server. Please make sure you are logged in.');
+      setSavedListings([]); // Set empty array on error
     } finally {
       setIsLoading(false);
     }

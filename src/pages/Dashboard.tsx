@@ -2,12 +2,17 @@ import { useNavigate } from "react-router-dom";
 import { CarValueCalculator } from "@/components/CarValueCalculator";
 import { Car } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { logout } from '@/store/authSlice';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    dispatch(logout());
     navigate('/login');
   };
 
@@ -26,7 +31,7 @@ const Dashboard = () => {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <span>Welcome, </span>
+              <span>Welcome, {user?.name}</span>
               <Button 
                 variant="secondary" 
                 onClick={handleLogout}

@@ -12,7 +12,9 @@
     "frontend": "vite",
     "backend": "cd backend && npm run dev",
     "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
-    "install-all": "npm install && cd auto-price-oracle-backend && npm install"
+    "install-all": "npm install && cd auto-price-oracle-backend && npm install",
+    "heroku-postbuild": "npm run build && cd backend && npm install && npm run build",
+    "start": "node dist/server.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
