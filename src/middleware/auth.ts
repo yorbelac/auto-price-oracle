@@ -3,7 +3,11 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
 
 interface AuthRequest extends Request {
-  user?: any;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -21,7 +25,11 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
       throw new Error();
     }
 
-    req.user = user;
+    req.user = {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email
+    };
     next();
   } catch (error) {
     res.status(401).json({ error: 'Please authenticate.' });
