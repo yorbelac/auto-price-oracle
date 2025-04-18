@@ -27,8 +27,13 @@ if (process.env.NODE_ENV === 'production') {
   // Serve static files from the dist directory
   app.use(express.static(path.join(__dirname, '../dist')));
   
-  // Handle client-side routing - must be after static file serving
-  app.get('*', (req, res) => {
+  // Handle client-side routing for HashRouter
+  app.get('*', (req, res, next) => {
+    // If the request is for an API route, let it pass through
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    // Otherwise, serve the index.html for HashRouter
     res.sendFile(path.join(__dirname, '../dist/index.html'));
   });
 }
