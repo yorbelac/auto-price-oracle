@@ -9,20 +9,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { CarData } from "../services/carService";
 
 interface SavedListingsProps {
-  listings: CarFormData[];
+  listings: CarData[];
   onClear: () => void;
-  onEdit: (listing: CarFormData) => void;
-  onDelete: (indices: number[]) => void;
+  onEdit: (listing: CarData) => void;
+  onDelete: (id: string) => void;
+  onSelect: (listing: CarData) => void;
+  isLoading?: boolean;
 }
 
 type SortField = 'vehicle' | 'price' | 'mileage' | 'pricePerMile' | 'score';
 type SortDirection = 'asc' | 'desc';
 
-export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedListingsProps) {
+export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, isLoading = false }: SavedListingsProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
-  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+  const [selectedIndices, setSelectedIndices] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('vehicle');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -157,7 +160,7 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
     priceToSlider(priceRange[1])
   ];
 
-  const handleSelect = (index: number) => {
+  const handleSelect = (index: string) => {
     setSelectedIndices(prev => 
       prev.includes(index) 
         ? prev.filter(i => i !== index)
@@ -169,12 +172,12 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
     setSelectedIndices(prev => 
       prev.length === listings.length 
         ? [] 
-        : listings.map((_, index) => index)
+        : listings.map((listing) => listing._id)
     );
   };
 
   const handleDeleteSelected = () => {
-    onDelete(selectedIndices);
+    onDelete(selectedIndices[0]);
     setSelectedIndices([]);
   };
 
@@ -237,8 +240,27 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
     return sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
   };
 
+  if (isLoading) {
+    return (
+      <div className="p-4 bg-white rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-4">Saved Listings</h2>
+        <div className="flex items-center justify-center h-40">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
   if (listings.length === 0) {
-    return null;
+    return (
+      <div className="p-4 bg-white rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-4">Saved Listings</h2>
+        <div className="text-center py-8 text-gray-500">
+          <p>No car listings saved yet.</p>
+          <p className="text-sm mt-2">Add a new car using the form to get started.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -385,14 +407,14 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
 
               return (
                 <div
-                  key={index}
-                      className={`p-4 rounded-lg ${selectedIndices.includes(index) ? 'bg-blue-50' : 'bg-gray-50'} hover:bg-gray-100 flex flex-col gap-2`}
+                  key={listing._id}
+                      className={`p-4 rounded-lg ${selectedIndices.includes(listing._id) ? 'bg-blue-50' : 'bg-gray-50'} hover:bg-gray-100 flex flex-col gap-2`}
                 >
                   <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2">
                           <Checkbox
-                            checked={selectedIndices.includes(index)}
-                            onCheckedChange={() => handleSelect(index)}
+                            checked={selectedIndices.includes(listing._id)}
+                            onCheckedChange={() => handleSelect(listing._id)}
                           />
                     <h3 className="font-medium">
                       {listing.year} {listing.make} {listing.model}
@@ -475,11 +497,11 @@ export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedList
                       const remainingMiles = Math.max(0, lifetimeMiles - listing.mileage);
 
                 return (
-                  <TableRow key={index}>
+                  <TableRow key={listing._id}>
                           <TableCell>
                             <Checkbox
-                              checked={selectedIndices.includes(index)}
-                              onCheckedChange={() => handleSelect(index)}
+                              checked={selectedIndices.includes(listing._id)}
+                              onCheckedChange={() => handleSelect(listing._id)}
                             />
                           </TableCell>
                           <TableCell>
