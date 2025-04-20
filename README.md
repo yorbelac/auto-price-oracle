@@ -67,6 +67,7 @@ Simply open [Lovable](https://lovable.dev/projects/37cf0c4b-c7e1-4a67-8799-e43d3
 <<<<<<< HEAD
 MIT
 
+<<<<<<< HEAD
 Hi Fam
 =======
 ## Can I connect a custom domain to my Lovable project?
@@ -77,3 +78,5 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 >>>>>>> parent of dfb207a (feat: Revamp project structure and enhance deployment process)
+=======
+>>>>>>> parent of 2d9df2b (blank commit)
