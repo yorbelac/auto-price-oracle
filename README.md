@@ -1,82 +1,60 @@
-# Welcome to your Lovable project
+# Auto Price Oracle
 
-## Project info
+A tool to help you make smarter car buying decisions by analyzing the value of used cars based on their price, mileage, and expected lifetime.
 
-**URL**: https://lovable.dev/projects/37cf0c4b-c7e1-4a67-8799-e43d304f6ade
+## Features
 
-## How can I edit this code?
+- Calculate value scores based on price per remaining mile
+- Save and compare multiple car listings
+- Filter and sort listings by various criteria
+- Log scale price filtering for better comparison
+- Support for multiple car makes and models
+- Grid and table views for saved listings
 
-There are several ways of editing your application.
+## Development
 
-**Use Lovable**
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/auto-price-oracle.git
+cd auto-price-oracle
+```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/37cf0c4b-c7e1-4a67-8799-e43d304f6ade) and start prompting.
+2. Install dependencies
+```bash
+npm install
+```
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Start the development server
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The site is automatically deployed to GitHub Pages when changes are pushed to the main branch. You can also manually trigger a deployment from the Actions tab in the GitHub repository.
 
-**Use GitHub Codespaces**
+To deploy locally:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. Build the site
+```bash
+npm run build
+```
 
-## What technologies are used for this project?
+2. Preview the build
+```bash
+npm run preview
+```
 
-This project is built with:
+## GitHub Pages Setup
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Enable GitHub Pages in your repository settings:
+   - Go to Settings > Pages
+   - Set the source to "GitHub Actions"
 
-## How can I deploy this project?
+2. The site will be available at: https://yourusername.github.io/auto-price-oracle/
 
-Simply open [Lovable](https://lovable.dev/projects/37cf0c4b-c7e1-4a67-8799-e43d304f6ade) and click on Share -> Publish.
+## License
 
-<<<<<<< HEAD
 MIT
 
-<<<<<<< HEAD
 Hi Fam
-=======
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
->>>>>>> parent of dfb207a (feat: Revamp project structure and enhance deployment process)
-=======
->>>>>>> parent of 2d9df2b (blank commit)

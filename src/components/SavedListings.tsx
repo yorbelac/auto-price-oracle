@@ -9,23 +9,20 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { CarData } from "../services/carService";
 
 interface SavedListingsProps {
-  listings: CarData[];
+  listings: CarFormData[];
   onClear: () => void;
-  onEdit: (listing: CarData) => void;
-  onDelete: (id: string) => void;
-  onSelect: (listing: CarData) => void;
-  isLoading?: boolean;
+  onEdit: (listing: CarFormData) => void;
+  onDelete: (indices: number[]) => void;
 }
 
 type SortField = 'vehicle' | 'price' | 'mileage' | 'pricePerMile' | 'score';
 type SortDirection = 'asc' | 'desc';
 
-export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, isLoading = false }: SavedListingsProps) {
+export function SavedListings({ listings, onClear, onEdit, onDelete }: SavedListingsProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
-  const [selectedIndices, setSelectedIndices] = useState<string[]>([]);
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('vehicle');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -160,7 +157,7 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
     priceToSlider(priceRange[1])
   ];
 
-  const handleSelect = (index: string) => {
+  const handleSelect = (index: number) => {
     setSelectedIndices(prev => 
       prev.includes(index) 
         ? prev.filter(i => i !== index)
@@ -172,12 +169,12 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
     setSelectedIndices(prev => 
       prev.length === listings.length 
         ? [] 
-        : listings.map((listing) => listing._id)
+        : listings.map((_, index) => index)
     );
   };
 
   const handleDeleteSelected = () => {
-    onDelete(selectedIndices[0]);
+    onDelete(selectedIndices);
     setSelectedIndices([]);
   };
 
@@ -240,27 +237,8 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
     return sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
   };
 
-  if (isLoading) {
-    return (
-      <div className="p-4 bg-white rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Saved Listings</h2>
-        <div className="flex items-center justify-center h-40">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
-
   if (listings.length === 0) {
-    return (
-      <div className="p-4 bg-white rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Saved Listings</h2>
-        <div className="text-center py-8 text-gray-500">
-          <p>No car listings saved yet.</p>
-          <p className="text-sm mt-2">Add a new car using the form to get started.</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -293,9 +271,9 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
               Delete Selected
             </Button>
           ) : (
-            <Button variant="outline" size="sm" onClick={onClear}>
-              Clear All
-            </Button>
+          <Button variant="outline" size="sm" onClick={onClear}>
+            Clear All
+          </Button>
           )}
         </div>
       </CardHeader>
@@ -315,23 +293,21 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label>Price per Mile Range</Label>
+                <Label>Year Range</Label>
                 <Slider
-                  min={0}
-                  max={100}
+                  min={YEAR_MIN}
+                  max={YEAR_MAX}
                   step={1}
-                  value={ppmSliderValue}
-                  onValueChange={handlePPMChange}
+                  value={yearRange}
+                  onValueChange={setYearRange}
                   className="w-full"
                   colorRanges={[
-                    { value: ppmToSlider(0.10), color: 'rgb(34 197 94)' },  // green-500
-                    { value: ppmToSlider(0.50), color: 'rgb(234 179 8)' },  // yellow-500
-                    { value: 100, color: 'rgb(239 68 68)' },  // red-500
+                    { value: 100, color: 'rgb(0, 0, 0)' }
                   ]}
                 />
                 <div className="flex justify-between text-sm text-gray-500">
-                  <span>${ppmRange[0].toFixed(2)}/mile</span>
-                  <span>${ppmRange[1].toFixed(2)}/mile</span>
+                  <span>{yearRange[0]}</span>
+                  <span>{yearRange[1]}</span>
                 </div>
               </div>
 
@@ -345,8 +321,7 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
                   onValueChange={handlePriceChange}
                   className="w-full"
                   colorRanges={[
-                    { value: priceToSlider(30000), color: 'rgb(34 197 94)' },  // green-500
-                    { value: 100, color: 'rgb(234 179 8)' }  // yellow-500
+                    { value: 100, color: 'rgb(0, 0, 0)' }
                   ]}
                 />
                 <div className="flex justify-between text-sm text-gray-500">
@@ -373,25 +348,25 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
                   <span>{formatNumber(mileageRange[1])} miles</span>
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-6">
               <div className="space-y-2">
-                <Label>Year Range</Label>
+                <Label>Price per Mile Range</Label>
                 <Slider
-                  min={YEAR_MIN}
-                  max={YEAR_MAX}
+                  min={0}
+                  max={100}
                   step={1}
-                  value={yearRange}
-                  onValueChange={setYearRange}
+                  value={ppmSliderValue}
+                  onValueChange={handlePPMChange}
                   className="w-full"
                   colorRanges={[
-                    { value: 100, color: 'rgb(0, 0, 0)' }
+                    { value: ppmToSlider(0.10), color: 'rgb(34 197 94)' },  // green-500
+                    { value: ppmToSlider(0.50), color: 'rgb(234 179 8)' },  // yellow-500
+                    { value: 100, color: 'rgb(239 68 68)' },  // red-500
                   ]}
                 />
                 <div className="flex justify-between text-sm text-gray-500">
-                  <span>{yearRange[0]}</span>
-                  <span>{yearRange[1]}</span>
+                  <span>${ppmRange[0].toFixed(2)}/mile</span>
+                  <span>${ppmRange[1].toFixed(2)}/mile</span>
                 </div>
               </div>
             </div>
@@ -399,38 +374,29 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
 
           {/* Main content area */}
           <div className="flex-1">
-            {viewMode === 'grid' ? (
+        {viewMode === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredAndSortedListings.map((listing, index) => {
-                  const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
-                  const rating = getRatingFromScore(valueScore);
+              const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
+              const rating = getRatingFromScore(valueScore);
                   const pricePerMile = calculatePricePerRemainingMile(listing.price, listing.mileage, listing.make);
                   const lifetimeMiles = getEstimatedLifetimeMiles(listing.make);
                   const remainingMiles = Math.max(0, lifetimeMiles - listing.mileage);
 
-<<<<<<< HEAD
               return (
                 <div
-                  key={listing._id}
-                      className={`p-4 rounded-lg ${selectedIndices.includes(listing._id) ? 'bg-blue-50' : 'bg-gray-50'} hover:bg-gray-100 flex flex-col gap-2`}
+                  key={index}
+                      className={`p-4 rounded-lg ${selectedIndices.includes(index) ? 'bg-blue-50' : 'bg-gray-50'} hover:bg-gray-100 flex flex-col gap-2`}
                 >
                   <div className="flex justify-between items-start">
-=======
-                  return (
-                    <div
-                      key={index}
-                      className={`p-4 rounded-lg ${selectedIndices.includes(index) ? 'bg-blue-50' : 'bg-gray-50'} hover:bg-gray-100 flex flex-col gap-2`}
-                    >
-                      <div className="flex justify-between items-start">
->>>>>>> parent of dfb207a (feat: Revamp project structure and enhance deployment process)
                         <div className="flex items-center gap-2">
                           <Checkbox
-                            checked={selectedIndices.includes(listing._id)}
-                            onCheckedChange={() => handleSelect(listing._id)}
+                            checked={selectedIndices.includes(index)}
+                            onCheckedChange={() => handleSelect(index)}
                           />
-                          <h3 className="font-medium">
-                            {listing.year} {listing.make} {listing.model}
-                          </h3>
+                    <h3 className="font-medium">
+                      {listing.year} {listing.make} {listing.model}
+                    </h3>
                         </div>
                         <div className="flex gap-2">
                           <Button
@@ -440,40 +406,40 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          {listing.url && (
-                            <a
-                              href={listing.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          )}
+                    {listing.url && (
+                      <a
+                        href={listing.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    )}
                         </div>
-                      </div>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <p>{formatCurrency(listing.price)} • {formatNumber(listing.mileage)} miles</p>
+                  </div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>{formatCurrency(listing.price)} • {formatNumber(listing.mileage)} miles</p>
                         <p>Remaining miles: {formatNumber(remainingMiles)}</p>
                         <p>Price per remaining mile: {pricePerMile > 0 ? `$${pricePerMile.toFixed(2)}` : 'N/A'}</p>
-                        <div className="flex items-center gap-1">
-                          Score: {rating}
-                          {valueScore < 0.3 ? (
-                            <TrendingDown className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <TrendingUp className="h-4 w-4 text-red-600" />
-                          )}
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-1">
+                      Score: {rating}
+                      {valueScore < 0.3 ? (
+                        <TrendingDown className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <TrendingUp className="h-4 w-4 text-red-600" />
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
+          <Table>
+            <TableHeader>
+              <TableRow>
                       <TableHead className="w-12">
                         <Checkbox
                           checked={selectedIndices.length === filteredAndSortedListings.length}
@@ -498,53 +464,48 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
                       <TableHead>
                         Actions
                       </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
                     {filteredAndSortedListings.map((listing, index) => {
-                      const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
-                      const rating = getRatingFromScore(valueScore);
+                const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
+                const rating = getRatingFromScore(valueScore);
                       const pricePerMile = calculatePricePerRemainingMile(listing.price, listing.mileage, listing.make);
                       const lifetimeMiles = getEstimatedLifetimeMiles(listing.make);
                       const remainingMiles = Math.max(0, lifetimeMiles - listing.mileage);
 
-<<<<<<< HEAD
                 return (
-                  <TableRow key={listing._id}>
-=======
-                      return (
-                        <TableRow key={index}>
->>>>>>> parent of dfb207a (feat: Revamp project structure and enhance deployment process)
+                  <TableRow key={index}>
                           <TableCell>
                             <Checkbox
-                              checked={selectedIndices.includes(listing._id)}
-                              onCheckedChange={() => handleSelect(listing._id)}
+                              checked={selectedIndices.includes(index)}
+                              onCheckedChange={() => handleSelect(index)}
                             />
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              {listing.year} {listing.make} {listing.model}
+                      {listing.year} {listing.make} {listing.model}
                               {listing.url && (
                                 <a href={listing.url} target="_blank" rel="noopener noreferrer">
                                   <ExternalLink className="h-4 w-4 text-blue-600 hover:text-blue-800" />
                                 </a>
                               )}
                             </div>
-                          </TableCell>
-                          <TableCell>{formatCurrency(listing.price)}</TableCell>
-                          <TableCell>{formatNumber(listing.mileage)}</TableCell>
+                    </TableCell>
+                    <TableCell>{formatCurrency(listing.price)}</TableCell>
+                    <TableCell>{formatNumber(listing.mileage)}</TableCell>
                           <TableCell>{pricePerMile > 0 ? `$${pricePerMile.toFixed(2)}` : 'N/A'}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              {rating}
-                              {valueScore < 0.3 ? (
-                                <TrendingDown className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <TrendingUp className="h-4 w-4 text-red-600" />
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {rating}
+                        {valueScore < 0.3 ? (
+                          <TrendingDown className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <TrendingUp className="h-4 w-4 text-red-600" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -552,14 +513,14 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
               </div>
-            )}
+        )}
           </div>
         </div>
       </CardContent>

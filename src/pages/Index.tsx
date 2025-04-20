@@ -1,40 +1,17 @@
+
 import { CarValueCalculator } from "@/components/CarValueCalculator";
 import { Car } from "lucide-react";
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/store';
-import { logout } from '@/store/authSlice';
-import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { user } = useSelector((state: RootState) => state.auth);
-
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-gray-100">
       <header className="py-8 bg-blue-800 text-white shadow-lg">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Car className="w-8 h-8 mr-3" />
-              <h1 className="text-3xl md:text-4xl font-bold">
-                Auto Price Oracle
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-blue-100">Welcome, {user?.name}</span>
-              <button
-                onClick={handleLogout}
-                className="bg-white text-blue-800 px-4 py-2 rounded-md hover:bg-blue-100 transition-colors"
-              >
-                Logout
-              </button>
-            </div>
+          <div className="flex items-center justify-center">
+            <Car className="w-8 h-8 mr-3" />
+            <h1 className="text-3xl md:text-4xl font-bold text-center">
+              Auto Price Oracle
+            </h1>
           </div>
           <p className="text-center mt-2 text-blue-100 max-w-2xl mx-auto">
             Calculate the true value of a car based on price, mileage, and estimated lifespan

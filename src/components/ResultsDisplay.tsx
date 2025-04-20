@@ -51,27 +51,27 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
   };
 
   return (
-    <Card className="w-full h-full shadow-lg border-blue-200">
-      <CardHeader className="bg-blue-700 text-white rounded-t-lg py-4">
+    <Card className="w-full max-w-md shadow-lg border-blue-200">
+      <CardHeader className="bg-blue-700 text-white rounded-t-lg">
         <CardTitle className="text-center text-2xl">Car Value Analysis</CardTitle>
       </CardHeader>
-      <CardContent className="p-6 space-y-8">
-        <div className="text-center">
-          <h3 className="text-xl font-medium">{carData.year} {carData.make} {carData.model}</h3>
+      <CardContent className="pt-6 space-y-4">
+        <div className="text-center mb-4">
+          <h3 className="text-lg font-medium">{carData.year} {carData.make} {carData.model}</h3>
           <p className="text-gray-500">
             {formatNumber(carData.mileage)} miles | {formatCurrency(carData.price)}
           </p>
         </div>
         
-        <div className="space-y-2">
-          <div className="flex justify-between">
+        <div className="space-y-1">
+          <div className="flex justify-between text-sm">
             <span>Vehicle Life</span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center">
               <span>{formatNumber(carData.mileage)} / {formatNumber(maxMileage)} miles</span>
               <MaxMileageModal />
             </div>
           </div>
-          <div className="relative pt-1 pb-1">
+          <div className="relative pt-2 pb-2">
             <Progress 
               value={Math.min(100, (carData.mileage / maxMileage) * 100)} 
               className="h-2"
@@ -87,31 +87,32 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
             </div>
           )}
         </div>
-
-        <div className="grid grid-cols-2 gap-4 py-8">
-          <div className="text-center p-8 bg-gray-50 rounded-lg">
-            <p className="text-gray-600 mb-2">Remaining Miles</p>
-            <p className="text-3xl font-semibold">{formatNumber(remainingMiles)}</p>
+        
+        <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="text-center">
+            <p className="text-sm text-gray-500">Remaining Miles</p>
+            <p className="text-lg font-semibold">{formatNumber(remainingMiles)}</p>
           </div>
-          <div className="text-center p-8 bg-gray-50 rounded-lg">
-            <p className="text-gray-600 mb-2">Cost Per Mile</p>
-            <p className="text-3xl font-semibold">
+          <div className="text-center">
+            <p className="text-sm text-gray-500">Cost Per Mile</p>
+            <p className="text-lg font-semibold">
               {remainingMiles > 0 ? `$${costPerMile.toFixed(2)}` : "N/A"}
             </p>
           </div>
         </div>
         
-        <div className="bg-gray-50 rounded-lg p-8 text-center">
-          <p className="text-gray-600 mb-2">Value Rating</p>
-          <p className={`text-4xl font-bold ${getRatingColor()} mb-4`}>
+        <div className="bg-gray-50 rounded-lg p-4 text-center">
+          <p className="text-sm text-gray-500 mb-1">Value Rating</p>
+          <p className={`text-3xl font-bold ${getRatingColor()}`}>
             {rating}
           </p>
-          <div className="text-sm text-gray-500">
-            <p>
-              This score is calculated based on the car's price divided by its remaining estimated life.
-              A lower score indicates better value for money.
-            </p>
-          </div>
+        </div>
+        
+        <div className="text-sm text-gray-500">
+          <p>
+            This score is calculated based on the car's price divided by its remaining estimated life.
+            A lower score indicates better value for money.
+          </p>
         </div>
       </CardContent>
     </Card>
