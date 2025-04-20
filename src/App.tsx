@@ -1,6 +1,6 @@
 import React from 'react'
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { Provider } from 'react-redux'
 import { store } from './store'
 import Login from './pages/Login'
@@ -15,7 +15,7 @@ const App = () => {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <HashRouter>
+        <BrowserRouter>
           <div className="min-h-screen bg-slate-50">
             <Routes>
               <Route path="/login" element={<Login />} />
@@ -32,7 +32,7 @@ const App = () => {
             </Routes>
             <Toaster />
           </div>
-        </HashRouter>
+        </BrowserRouter>
       </QueryClientProvider>
     </Provider>
   )

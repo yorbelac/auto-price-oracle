@@ -315,21 +315,23 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
 
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label>Year Range</Label>
+                <Label>Price per Mile Range</Label>
                 <Slider
-                  min={YEAR_MIN}
-                  max={YEAR_MAX}
+                  min={0}
+                  max={100}
                   step={1}
-                  value={yearRange}
-                  onValueChange={setYearRange}
+                  value={ppmSliderValue}
+                  onValueChange={handlePPMChange}
                   className="w-full"
                   colorRanges={[
-                    { value: 100, color: 'rgb(0, 0, 0)' }
+                    { value: ppmToSlider(0.10), color: 'rgb(34 197 94)' },  // green-500
+                    { value: ppmToSlider(0.50), color: 'rgb(234 179 8)' },  // yellow-500
+                    { value: 100, color: 'rgb(239 68 68)' },  // red-500
                   ]}
                 />
                 <div className="flex justify-between text-sm text-gray-500">
-                  <span>{yearRange[0]}</span>
-                  <span>{yearRange[1]}</span>
+                  <span>${ppmRange[0].toFixed(2)}/mile</span>
+                  <span>${ppmRange[1].toFixed(2)}/mile</span>
                 </div>
               </div>
 
@@ -371,25 +373,25 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onSelect, i
                   <span>{formatNumber(mileageRange[1])} miles</span>
                 </div>
               </div>
+            </div>
 
+            <div className="space-y-6">
               <div className="space-y-2">
-                <Label>Price per Mile Range</Label>
+                <Label>Year Range</Label>
                 <Slider
-                  min={0}
-                  max={100}
+                  min={YEAR_MIN}
+                  max={YEAR_MAX}
                   step={1}
-                  value={ppmSliderValue}
-                  onValueChange={handlePPMChange}
+                  value={yearRange}
+                  onValueChange={setYearRange}
                   className="w-full"
                   colorRanges={[
-                    { value: ppmToSlider(0.10), color: 'rgb(34 197 94)' },  // green-500
-                    { value: ppmToSlider(0.50), color: 'rgb(234 179 8)' },  // yellow-500
-                    { value: 100, color: 'rgb(239 68 68)' },  // red-500
+                    { value: 100, color: 'rgb(0, 0, 0)' }
                   ]}
                 />
                 <div className="flex justify-between text-sm text-gray-500">
-                  <span>${ppmRange[0].toFixed(2)}/mile</span>
-                  <span>${ppmRange[1].toFixed(2)}/mile</span>
+                  <span>{yearRange[0]}</span>
+                  <span>{yearRange[1]}</span>
                 </div>
               </div>
             </div>

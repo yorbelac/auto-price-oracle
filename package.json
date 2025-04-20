@@ -3,8 +3,14 @@
   "private": true,
   "version": "0.0.0",
   "description": "Auto Price Oracle - Car Listing Analysis Tool",
+  "engines": {
+    "node": "18.x",
+    "npm": "10.x"
+  },
   "scripts": {
-    "build": "tsc && vite build",
+    "build:frontend": "vite build",
+    "build:backend": "tsc -P tsconfig.server.json",
+    "build": "npm run build:frontend && npm run build:backend",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "server": "ts-node -P tsconfig.server.json src/server.ts",
@@ -12,7 +18,9 @@
     "frontend": "vite",
     "backend": "cd backend && npm run dev",
     "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
-    "install-all": "npm install && cd auto-price-oracle-backend && npm install"
+    "install-all": "npm install && cd auto-price-oracle-backend && npm install",
+    "heroku-postbuild": "npm run build",
+    "start": "node dist/server.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
