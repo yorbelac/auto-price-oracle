@@ -21,8 +21,6 @@ export function CarValueCalculator() {
   }, []);
 
   const handleFormSubmit = (data: CarFormData) => {
-    setCalculatedCar(data);
-    
     if (editingListing) {
       // Update existing listing
       const updatedListings = savedListings.map(listing => 
@@ -31,6 +29,7 @@ export function CarValueCalculator() {
       setSavedListings(updatedListings);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedListings));
       setEditingListing(null);
+      setCalculatedCar(null);
       toast.success("Listing updated successfully!");
     } else {
       // Add new listing
@@ -39,6 +38,10 @@ export function CarValueCalculator() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newListings));
       toast.success("Listing saved successfully!");
     }
+  };
+
+  const handleFormChange = (data: CarFormData) => {
+    setCalculatedCar(data);
   };
 
   const handleClearListings = () => {
@@ -67,41 +70,32 @@ export function CarValueCalculator() {
     toast.success("Form cleared for new car entry");
   };
 
+  const handleTogglePin = (index: number) => {
+    const updatedListings = savedListings.map((listing, i) => 
+      i === index ? { ...listing, pinned: !listing.pinned } : listing
+    );
+    setSavedListings(updatedListings);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedListings));
+    toast.success(updatedListings[index].pinned ? "Listing pinned!" : "Listing unpinned");
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-blue-800">
-              {editingListing ? "Edit Car Details" : "Enter Car Details"}
-            </h2>
-            {editingListing && (
-              <Button
-                variant="outline"
-                onClick={handleNewCar}
-                className="text-blue-600 hover:text-blue-800"
-              >
-                New Car
-              </Button>
-            )}
+        <div className="flex flex-col">
+          <div className="flex-1">
+            <CarForm 
+              onSubmit={handleFormSubmit} 
+              onChange={handleFormChange}
+              initialData={editingListing || undefined}
+            />
           </div>
-          <CarForm 
-            onSubmit={handleFormSubmit} 
-            initialData={editingListing || undefined}
-          />
         </div>
         
-        <div>
-          <h2 className="text-2xl font-bold text-blue-800 mb-6">
-            {calculatedCar ? "Value Analysis" : "Result Preview"}
-          </h2>
-          {calculatedCar ? (
+        <div className="h-full flex flex-col">
+          <div className="flex-1">
             <ResultsDisplay carData={calculatedCar} />
-          ) : (
-            <div className="w-full max-w-md h-[520px] flex items-center justify-center bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 text-gray-400">
-              Enter car details to see the value analysis
-            </div>
-          )}
+          </div>
         </div>
       </div>
       <div className="mt-8">
@@ -110,6 +104,7 @@ export function CarValueCalculator() {
           onClear={handleClearListings}
           onEdit={handleEditListing}
           onDelete={handleDeleteListings}
+          onTogglePin={handleTogglePin}
         />
       </div>
     </div>
