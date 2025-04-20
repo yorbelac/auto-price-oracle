@@ -9,7 +9,7 @@ export default defineConfig({
     port: 8080,
   },
   plugins: [react()],
-  base: '/auto-price-oracle/',
+  base: '/carpool/',
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
