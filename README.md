@@ -15,8 +15,8 @@ A tool to help you make smarter car buying decisions by analyzing the value of u
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/auto-price-oracle.git
-cd auto-price-oracle
+git clone https://github.com/yourusername/carpool.git
+cd Carpool
 ```
 
 2. Install dependencies
@@ -51,7 +51,7 @@ npm run preview
    - Go to Settings > Pages
    - Set the source to "GitHub Actions"
 
-2. The site will be available at: https://yourusername.github.io/auto-price-oracle/
+2. The site will be available at: https://yourusername.github.io/carpool/
 
 ## License
 
