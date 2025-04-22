@@ -1,93 +1,19 @@
-Ssangyong:
-Stavic
+Step	Platform	Type	Cost
+1	Product Hunt	Product Launch Site	Free
+2	AlternativeTo	App Directory	Free
+3	BetaList	Beta Launch Platform	Free/$$
+4	There's an AI for That	Tool Directory	Free
+5	Startup Stash	Useful Tools Aggregator	Free
+6	GitHub Awesome Lists	Developer/Tool Lists	Free
+7	Quora/StackOverflow	Organic SEO	Free
+8	Guest Blogs	Content Marketing	Free
+9	YouTube Creators	Influencer Outreach	Free/$$
+10	IndieHackers	Entrepreneur Community	Free
 
-Suzuki:
-Aerio
-18 
-Celerio
-3 
-DL1000
-3 
-Equator
-4 
-Escudo
-3 
-Esteem
-4 
-Estilo
-1 
-Forenza
-73 
-Grand Vitara
-57 
-Kizashi
-13 
-Liana
-1 
-Margalla
-1 
-Maruti
-1 
-Reno
-16 
-S-Cross
-1 
-Samurai
-1 
-Sidekick
-3 
-Swift
-20 
-SX4
-30 
-Verona
-15 
-Vitara
-6 
-Vitara S
-1 
-XL7
+Subreddit	Purpose	Best Posting Time (US)
+r/usedcars	Directly relevant shoppers looking for deals	Sunday evening or weekday evenings (6–10pm EST)
+r/whatcarshouldIbuy	People actively comparing cars for purchase	Sunday evening (highest activity)
+r/frugal	Cost-conscious buyers who appreciate "value" tools	Monday or Tuesday afternoon (12–4pm EST)
+r/Cartalk	General car discussion, friendly crowd	Evenings, any day
+r/InternetIsBeautiful	Showcasing useful websites/tools	Morning to early afternoon (9am–1pm EST, weekdays)
 
-Tata:
-Indica Vista
-2 
-Indigo
-2 
-Indigo Manza
-1 
-Nexon
-
-Vauxhall:
-Astra
-13 
-Astra Club
-1 
-Carlton
-3 
-Cavalier
-5 
-Combo
-1 
-Corsa
-18 
-Grandland X
-1 
-Meriva
-3 
-Mokka
-1 
-Monaro
-1 
-Omega MV6 Estate
-2 
-Tigra
-2 
-Vectra
-14 
-Zafira
-
-Yugo:
-GV
-
-Zimmer:
-Golden Spirit

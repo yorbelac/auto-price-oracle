@@ -810,7 +810,7 @@ export function SavedListings({
                               Miles {getSortIcon('mileage')}
                             </div>
                           </TableHead>
-                          <TableHead className="cursor-pointer" onClick={() => handleSort('pricePerMile')}>
+                          <TableHead className="cursor-pointer bg-blue-50 font-bold" onClick={() => handleSort('pricePerMile')}>
                             <div className="flex items-center gap-2">
                               Price/Mile {getSortIcon('pricePerMile')}
                             </div>
@@ -830,7 +830,7 @@ export function SavedListings({
                           return (
                             <TableRow 
                               key={listing.originalIndex}
-                              className={listing.pinned ? 'bg-red-50 hover:bg-red-100 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : ''}
+                              className={listing.pinned ? 'bg-red-50 hover:bg-red-100 border-t-2 border-b-2 border-red-300' : ''}
                             >
                               <TableCell>
                                 <Checkbox
