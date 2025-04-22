@@ -77,12 +77,6 @@ export function CarForm({ onSubmit, onChange, initialData }: CarFormProps) {
     }
   }, [initialData]);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Form Data:', formData);
-    console.log('Available Models:', availableModels);
-    console.log('Initial Data:', initialData);
-  }, [formData, availableModels, initialData]);
 
   // Add a useEffect to emit changes
   useEffect(() => {
@@ -100,21 +94,8 @@ export function CarForm({ onSubmit, onChange, initialData }: CarFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Remove the price validation checks
-    onSubmit(formData);
-
-    // Only clear form if we're not editing
-    if (!initialData) {
-      setFormData({
-        make: "",
-        model: "",
-        year: new Date().getFullYear(),
-        price: 0,
-        mileage: 0,
-        url: "",
-        pinned: false,
-      });
+    if (onSubmit) {
+      onSubmit(formData);
     }
   };
 
@@ -128,6 +109,44 @@ export function CarForm({ onSubmit, onChange, initialData }: CarFormProps) {
       </CardHeader>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="year">Year</Label>
+            {/* Mobile native select */}
+            <select
+              id="year-mobile"
+              value={formData.year.toString()}
+              onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+              required
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:hidden"
+            >
+              <option value="">Select year</option>
+              {years.map(year => (
+                <option key={year} value={year.toString()}>
+                  {year}
+                </option>
+              ))}
+            </select>
+            {/* Desktop custom select */}
+            <div className="hidden sm:block">
+              <Select
+                value={formData.year.toString()}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, year: parseInt(value) }))}
+                required
+              >
+                <SelectTrigger id="year" className="w-full">
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="make">Make</Label>
             {/* Mobile native select */}
@@ -204,74 +223,38 @@ export function CarForm({ onSubmit, onChange, initialData }: CarFormProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="year">Year</Label>
-            {/* Mobile native select */}
-            <select
-              id="year-mobile"
-              value={formData.year.toString()}
-              onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-              required
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:hidden"
-            >
-              <option value="">Select year</option>
-              {years.map(year => (
-                <option key={year} value={year.toString()}>
-                  {year}
-                </option>
-              ))}
-            </select>
-            {/* Desktop custom select */}
-            <div className="hidden sm:block">
-              <Select
-                value={formData.year.toString()}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, year: parseInt(value) }))}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="price">Price ($)</Label>
+              <Input
+                id="price"
+                type="number"
+                placeholder="Car value (e.g. 25000)"
+                value={formData.price || ""}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  setFormData(prev => ({ ...prev, price: value }));
+                }}
                 required
-              >
-                <SelectTrigger id="year" className="w-full">
-                  <SelectValue placeholder="Select year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                className="w-full"
+              />
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="price">Price ($)</Label>
-            <Input
-              id="price"
-              type="number"
-              placeholder="Car value (e.g. 25000)"
-              value={formData.price || ""}
-              onChange={(e) => {
-                const value = parseInt(e.target.value) || 0;
-                setFormData(prev => ({ ...prev, price: value }));
-              }}
-              required
-              className="w-full"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="mileage">Mileage</Label>
-            <Input
-              id="mileage"
-              type="number"
-              placeholder="Enter mileage"
-              value={formData.mileage || ""}
-              onChange={(e) => setFormData(prev => ({ 
-                ...prev, 
-                mileage: parseInt(e.target.value) || 0 
-              }))}
-              required
-              className="w-full"
-            />
+            <div className="space-y-2">
+              <Label htmlFor="mileage">Mileage</Label>
+              <Input
+                id="mileage"
+                type="number"
+                placeholder="Enter mileage"
+                value={formData.mileage || ""}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  mileage: parseInt(e.target.value) || 0 
+                }))}
+                required
+                className="w-full"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

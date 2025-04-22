@@ -9,6 +9,7 @@ import { Share2 } from "lucide-react";
 
 const STORAGE_KEY = "savedCarListings";
 const SAVED_LISTS_KEY = "savedCarListsCollection";
+const CURRENT_LIST_NAME_KEY = "currentListName";
 
 export function CarValueCalculator() {
   const [calculatedCar, setCalculatedCar] = useState<CarFormData | null>(null);
@@ -18,8 +19,10 @@ export function CarValueCalculator() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareData, setShareData] = useState("");
   const [savedLists, setSavedLists] = useState<Array<{ name: string; listings: CarFormData[] }>>([]);
+  const [currentListName, setCurrentListName] = useState<string>("");
+  const [editingListingIndex, setEditingListingIndex] = useState<number | null>(null);
 
-  // Load saved listings and lists from local storage
+  // Load saved listings, lists, and current list name from local storage
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -29,17 +32,26 @@ export function CarValueCalculator() {
     if (savedListsData) {
       setSavedLists(JSON.parse(savedListsData));
     }
+    const currentName = localStorage.getItem(CURRENT_LIST_NAME_KEY);
+    if (currentName) {
+      setCurrentListName(currentName);
+    }
   }, []);
 
   const handleFormSubmit = (data: CarFormData) => {
-    if (editingListing) {
+    if (editingListing && editingListingIndex !== null) {
       // Update existing listing
-      const updatedListings = savedListings.map(listing => 
-        listing === editingListing ? data : listing
-      );
+      const updatedListings = savedListings.map((listing, index) => {
+        if (index === editingListingIndex) {
+          // Keep the pinned status when updating
+          return { ...data, pinned: listing.pinned };
+        }
+        return listing;
+      });
       setSavedListings(updatedListings);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedListings));
       setEditingListing(null);
+      setEditingListingIndex(null);
       setCalculatedCar(null);
       toast.success("Listing updated successfully!");
     } else {
@@ -63,8 +75,9 @@ export function CarValueCalculator() {
     toast.success(`Deleted ${selectedIndices.length} listing${selectedIndices.length > 1 ? 's' : ''}`);
   };
 
-  const handleEditListing = (listing: CarFormData) => {
+  const handleEditListing = (listing: CarFormData, index: number) => {
     setEditingListing(listing);
+    setEditingListingIndex(index);
     setCalculatedCar(listing);
     // Scroll to the form
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -110,19 +123,31 @@ export function CarValueCalculator() {
       updatedLists = [...savedLists, { name, listings }];
     }
     setSavedLists(updatedLists);
+    setCurrentListName(name);
+    // Update current listings to match the saved list
+    setSavedListings(listings);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(listings));
     localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(updatedLists));
+    localStorage.setItem(CURRENT_LIST_NAME_KEY, name);
     toast.success(`List "${name}" ${existingIndex !== undefined ? 'updated' : 'saved'} successfully!`);
   };
 
-  const handleLoadList = (listings: CarFormData[]) => {
+  const handleLoadList = (listings: CarFormData[], name: string) => {
     setSavedListings(listings);
+    setCurrentListName(name);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(listings));
+    localStorage.setItem(CURRENT_LIST_NAME_KEY, name);
     toast.success("List loaded successfully!");
   };
 
   const handleDeleteList = (index: number) => {
     const updatedLists = savedLists.filter((_, i) => i !== index);
     setSavedLists(updatedLists);
+    // If we're deleting the current list, clear the current list name
+    if (savedLists[index].name === currentListName) {
+      setCurrentListName("");
+      localStorage.removeItem(CURRENT_LIST_NAME_KEY);
+    }
     localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(updatedLists));
     toast.success("List deleted successfully!");
   };
@@ -153,7 +178,6 @@ export function CarValueCalculator() {
               onSubmit={handleFormSubmit} 
               onChange={handleFormChange}
               initialData={editingListing || undefined}
-              onNewCar={handleNewCar}
             />
           </div>
         </div>
@@ -176,8 +200,23 @@ export function CarValueCalculator() {
           onLoadList={handleLoadList}
           onDeleteList={handleDeleteList}
           savedLists={savedLists}
+          currentListName={currentListName}
         />
       </div>
+
+      <footer className="mt-12 mb-8 text-center text-gray-500 border-t border-gray-100 pt-8">
+        <div className="max-w-2xl mx-auto">
+          <p className="text-sm">
+            Have feedback, found an issue, or want to suggest an improvement?{" "}
+            <a 
+              href="mailto:yorbelac@gmail.com?subject=Carpool Feedback" 
+              className="text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              Email me
+            </a>
+          </p>
+        </div>
+      </footer>
 
       <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
         <DialogContent>

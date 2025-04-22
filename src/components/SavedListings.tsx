@@ -1,4 +1,4 @@
-import { Link as LinkIcon, ExternalLink, TrendingDown, TrendingUp, LayoutGrid, Table as TableIcon, Pencil, Trash2, ChevronUp, ChevronDown, Search, AlertTriangle, Car, DollarSign, Pin, SlidersHorizontal, Share2, List, Grid } from "lucide-react";
+import { Link as LinkIcon, ExternalLink, TrendingDown, TrendingUp, LayoutGrid, Table as TableIcon, Pencil, Trash2, ChevronUp, ChevronDown, Search, AlertTriangle, Car, DollarSign, Pin, SlidersHorizontal, Share2, List, Grid, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,14 +14,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 interface SavedListingsProps {
   listings: CarFormData[];
   onClear: () => void;
-  onEdit: (listing: CarFormData) => void;
+  onEdit: (listing: CarFormData, index: number) => void;
   onDelete: (indices: number[]) => void;
   onTogglePin: (index: number) => void;
   onShare: () => void;
   onSaveList: (name: string, listings: CarFormData[], existingIndex?: number) => void;
-  onLoadList: (listings: CarFormData[]) => void;
+  onLoadList: (listings: CarFormData[], name: string) => void;
   onDeleteList: (index: number) => void;
   savedLists?: { name: string; listings: CarFormData[] }[];
+  currentListName?: string;
 }
 
 type SortField = 'vehicle' | 'price' | 'mileage' | 'pricePerMile' | 'score';
@@ -235,7 +236,8 @@ export function SavedListings({
   onSaveList, 
   onLoadList,
   onDeleteList,
-  savedLists = [] 
+  savedLists = [],
+  currentListName = ""
 }: SavedListingsProps) {
   // Component state
   const [viewMode, setViewMode] = useState<'grid' | 'table'>(() => {
@@ -255,9 +257,14 @@ export function SavedListings({
   const [ppmRange, setPpmRange] = useState<[number, number]>([PPM_MIN, PPM_MAX]);
   const [yearRange, setYearRange] = useState<[number, number]>([YEAR_MIN, YEAR_MAX]);
   const [showListsView, setShowListsView] = useState(false);
-  const [newListName, setNewListName] = useState('');
+  const [newListName, setNewListName] = useState(currentListName);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [listToReplace, setListToReplace] = useState<{ index: number, name: string } | null>(null);
+
+  // Update newListName when currentListName changes
+  useEffect(() => {
+    setNewListName(currentListName);
+  }, [currentListName]);
 
   // Memoized handlers
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -354,7 +361,6 @@ export function SavedListings({
   };
 
   const handleSort = (field: SortField) => {
-    console.log('Sorting by:', field, 'Current direction:', sortDirection);
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -370,10 +376,8 @@ export function SavedListings({
     return remainingMiles > 0 ? price / remainingMiles : 0;
   };
 
+  // Calculate filtered and sorted listings
   const filteredAndSortedListings = useMemo(() => {
-    console.log('Recalculating filtered and sorted listings');
-    console.log('Current sort field:', sortField);
-    console.log('Current sort direction:', sortDirection);
     return listings
       .map((listing, index) => ({ ...listing, originalIndex: index }))
       .filter((listing) => {
@@ -408,7 +412,10 @@ export function SavedListings({
           case 'pricePerMile':
             const aPricePerMile = calculatePricePerRemainingMile(a.price, a.mileage, a.make);
             const bPricePerMile = calculatePricePerRemainingMile(b.price, b.mileage, b.make);
-            return (aPricePerMile - bPricePerMile) * direction;
+            // Treat zero values (N/A) as infinity for sorting purposes
+            const aValue = aPricePerMile === 0 ? Infinity : aPricePerMile;
+            const bValue = bPricePerMile === 0 ? Infinity : bPricePerMile;
+            return (aValue - bValue) * direction;
           case 'score':
             const aScore = calculateValueScore(a.price, a.mileage, a.make);
             const bScore = calculateValueScore(b.price, b.mileage, b.make);
@@ -465,6 +472,20 @@ export function SavedListings({
     }
   };
 
+  const handleEditClick = (listing: CarFormData) => {
+    // Find the index in the original listings array
+    const index = listings.findIndex(l => 
+      l.make === listing.make && 
+      l.model === listing.model && 
+      l.year === listing.year && 
+      l.price === listing.price && 
+      l.mileage === listing.mileage
+    );
+    if (index !== -1) {
+      onEdit(listing, index);
+    }
+  };
+
   return (
     <Card className="shadow-lg border-blue-200">
       <CardHeader className="bg-blue-700 text-white rounded-t-lg">
@@ -496,20 +517,6 @@ export function SavedListings({
       <CardContent className="p-4">
         {showListsView ? (
           <div className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="New list name"
-                value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleSaveList}
-                disabled={!newListName.trim() || listings.length === 0}
-              >
-                Save Current List
-              </Button>
-            </div>
             {savedLists.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500">No saved lists yet. Save your current listings as a new list!</p>
@@ -538,9 +545,8 @@ export function SavedListings({
                               variant="outline"
                               className="flex-1"
                               onClick={() => {
-                                onLoadList(list.listings);
+                                onLoadList(list.listings, list.name);
                                 setShowListsView(false);
-                                setNewListName(list.name);
                               }}
                             >
                               Load List
@@ -588,20 +594,29 @@ export function SavedListings({
                   
                   {!showListsView && (
                     <div className="flex items-center gap-2 flex-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        style={{ fontSize: '1.3em', marginLeft: '5px' }}
+                        onClick={handleSaveList}
+                        disabled={!newListName.trim() || listings.length === 0}
+                        className="flex items-center"
+                        title="Save List"
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
                       <Input
                         value={newListName}
                         onChange={(e) => setNewListName(e.target.value)}
                         placeholder="Unnamed List"
-                        className={`${!newListName ? "text-gray-400" : "text-gray-700"} max-w-[200px]`}
+                        style={{ fontSize: '1.3em', paddingLeft: '10px' }}
+                        className={`
+                          border-0 border-b border-gray-100 rounded-none text-2xl font-semibold 
+                          focus-visible:ring-0 focus-visible:border-gray-200
+                          ${!newListName ? "text-gray-400 italic" : "text-gray-900"}
+                          hover:border-gray-200 transition-colors pl-[10px]
+                        `}
                       />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleSaveList}
-                        disabled={!newListName.trim() || listings.length === 0}
-                      >
-                        Save List
-                      </Button>
                     </div>
                   )}
 
@@ -642,7 +657,7 @@ export function SavedListings({
 
                 {viewMode === 'grid' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredAndSortedListings.map((listing) => {
+                    {filteredAndSortedListings.map((listing, index) => {
                       const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
                       const rating = getRatingFromScore(valueScore);
                       const maxMileage = getEstimatedLifetimeMiles(listing.make);
@@ -678,7 +693,7 @@ export function SavedListings({
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => onEdit(listing)}
+                                  onClick={() => handleEditClick(listing)}
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
@@ -757,19 +772,24 @@ export function SavedListings({
                             />
                           </TableHead>
                           <TableHead className="cursor-pointer" onClick={() => handleSort('vehicle')}>
-                            Vehicle {getSortIcon('vehicle')}
+                            <div className="flex items-center gap-2">
+                              Vehicle {getSortIcon('vehicle')}
+                            </div>
                           </TableHead>
                           <TableHead className="cursor-pointer" onClick={() => handleSort('price')}>
-                            Price {getSortIcon('price')}
+                            <div className="flex items-center gap-2">
+                              Price {getSortIcon('price')}
+                            </div>
                           </TableHead>
                           <TableHead className="cursor-pointer" onClick={() => handleSort('mileage')}>
-                            Current Miles {getSortIcon('mileage')}
+                            <div className="flex items-center gap-2">
+                              Miles {getSortIcon('mileage')}
+                            </div>
                           </TableHead>
                           <TableHead className="cursor-pointer" onClick={() => handleSort('pricePerMile')}>
-                            Price/Mile {getSortIcon('pricePerMile')}
-                          </TableHead>
-                          <TableHead className="cursor-pointer" onClick={() => handleSort('score')}>
-                            Score {getSortIcon('score')}
+                            <div className="flex items-center gap-2">
+                              Price/Mile {getSortIcon('pricePerMile')}
+                            </div>
                           </TableHead>
                           <TableHead>Links</TableHead>
                           <TableHead>
@@ -779,8 +799,6 @@ export function SavedListings({
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedListings.map((listing) => {
-                          const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
-                          const rating = getRatingFromScore(valueScore);
                           const pricePerMile = calculatePricePerRemainingMile(listing.price, listing.mileage, listing.make);
                           const lifetimeMiles = getEstimatedLifetimeMiles(listing.make);
                           const remainingMiles = Math.max(0, lifetimeMiles - listing.mileage);
@@ -788,7 +806,7 @@ export function SavedListings({
                           return (
                             <TableRow 
                               key={listing.originalIndex}
-                              className={`${listing.pinned ? 'bg-red-50 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : undefined}`}
+                              className={listing.pinned ? 'bg-red-50 hover:bg-red-100 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : ''}
                             >
                               <TableCell>
                                 <Checkbox
@@ -804,18 +822,6 @@ export function SavedListings({
                               <TableCell>{formatCurrency(listing.price)}</TableCell>
                               <TableCell>{formatNumber(listing.mileage)}</TableCell>
                               <TableCell>{pricePerMile > 0 ? `$${pricePerMile.toFixed(2)}` : 'N/A'}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-1">
-                                  {rating}
-                                  <span className={getRatingColor(rating)}>
-                                    {valueScore < 0.3 ? (
-                                      <TrendingDown className="h-4 w-4 text-green-600" />
-                                    ) : (
-                                      <TrendingUp className="h-4 w-4 text-red-600" />
-                                    )}
-                                  </span>
-                                </div>
-                              </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2 justify-end">
                                   {listing.url && (
@@ -863,7 +869,7 @@ export function SavedListings({
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => onEdit(listing)}
+                                    onClick={() => handleEditClick(listing)}
                                   >
                                     <Pencil className="h-4 w-4" />
                                   </Button>
