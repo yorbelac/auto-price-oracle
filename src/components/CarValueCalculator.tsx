@@ -5,7 +5,7 @@ import { SavedListings } from "./SavedListings";
 import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Share2 } from "lucide-react";
+import { Share2, Copy } from "lucide-react";
 
 const STORAGE_KEY = "savedCarListings";
 const SAVED_LISTS_KEY = "savedCarListsCollection";
@@ -226,11 +226,25 @@ export function CarValueCalculator() {
           <div className="space-y-4">
             <div>
               <h3 className="text-sm font-medium mb-2">Export Listings</h3>
-              <textarea
-                className="w-full h-32 p-2 border rounded"
-                value={shareData}
-                readOnly
-              />
+              <div className="relative">
+                <textarea
+                  className="w-full h-32 p-2 border rounded"
+                  value={shareData}
+                  readOnly
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="absolute top-2 right-2 bg-blue-700 hover:bg-blue-800 text-white hover:text-white border-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(shareData);
+                    toast.success("Copied to clipboard!");
+                  }}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </Button>
+              </div>
             </div>
             <div>
               <h3 className="text-sm font-medium mb-2">Import Listings</h3>

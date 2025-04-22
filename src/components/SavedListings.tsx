@@ -1,4 +1,4 @@
-import { Link as LinkIcon, ExternalLink, TrendingDown, TrendingUp, LayoutGrid, Table as TableIcon, Pencil, Trash2, ChevronUp, ChevronDown, Search, AlertTriangle, Car, DollarSign, Pin, SlidersHorizontal, Share2, List, Grid, Save } from "lucide-react";
+import { Link as LinkIcon, ExternalLink, TrendingDown, TrendingUp, LayoutGrid, Table as TableIcon, Pencil, Trash2, ChevronUp, ChevronDown, Search, AlertTriangle, Car, DollarSign, Pin, SlidersHorizontal, Share2, List, Grid, Save, RotateCcw, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -41,6 +41,7 @@ interface FilterControlsProps {
   onPriceChange: (values: [number, number]) => void;
   mileageRange: [number, number];
   onMileageChange: (values: [number, number]) => void;
+  onClearFilters: () => void;
 }
 
 // Constants moved outside component
@@ -136,17 +137,29 @@ const FilterControls = memo(function FilterControls({
   onPriceChange,
   mileageRange,
   onMileageChange,
+  onClearFilters,
 }: FilterControlsProps) {
   return (
     <div className="space-y-6">
-      <div className="relative">
-        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-        <Input
-          placeholder="Search vehicles..."
-          value={searchQuery}
-          onChange={onSearchChange}
-          className="pl-9"
-        />
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="Search vehicles..."
+            value={searchQuery}
+            onChange={onSearchChange}
+            className="pl-9"
+          />
+        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={onClearFilters}
+          title="Clear all filters"
+          className="shrink-0"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="space-y-6">
@@ -298,6 +311,15 @@ export function SavedListings({
     priceToSlider(priceRange[1])
   ] as [number, number], [priceRange]);
 
+  // Add clear filters handler
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery('');
+    setPriceRange([PRICE_MIN, PRICE_MAX]);
+    setMileageRange([MILEAGE_MIN, MILEAGE_MAX]);
+    setPpmRange([PPM_MIN, PPM_MAX]);
+    setYearRange([YEAR_MIN, YEAR_MAX]);
+  }, []);
+
   // Memoized filter props
   const filterProps = useMemo(() => ({
     searchQuery,
@@ -312,6 +334,7 @@ export function SavedListings({
     onPriceChange: handlePriceChange,
     mileageRange,
     onMileageChange: handleMileageChange,
+    onClearFilters: handleClearFilters,
   }), [
     searchQuery,
     handleSearchChange,
@@ -325,6 +348,7 @@ export function SavedListings({
     handlePriceChange,
     mileageRange,
     handleMileageChange,
+    handleClearFilters,
   ]);
 
   // Update view mode when screen size changes
