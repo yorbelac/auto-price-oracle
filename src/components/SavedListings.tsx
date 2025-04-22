@@ -1,4 +1,4 @@
-import { Link as LinkIcon, ExternalLink, TrendingDown, TrendingUp, LayoutGrid, Table as TableIcon, Pencil, Trash2, ChevronUp, ChevronDown, Search, AlertTriangle, Car, DollarSign, Pin, SlidersHorizontal } from "lucide-react";
+import { Link as LinkIcon, ExternalLink, TrendingDown, TrendingUp, LayoutGrid, Table as TableIcon, Pencil, Trash2, ChevronUp, ChevronDown, Search, AlertTriangle, Car, DollarSign, Pin, SlidersHorizontal, Share2, List, Grid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,6 +17,11 @@ interface SavedListingsProps {
   onEdit: (listing: CarFormData) => void;
   onDelete: (indices: number[]) => void;
   onTogglePin: (index: number) => void;
+  onShare: () => void;
+  onSaveList: (name: string, listings: CarFormData[], existingIndex?: number) => void;
+  onLoadList: (listings: CarFormData[]) => void;
+  onDeleteList: (index: number) => void;
+  savedLists?: { name: string; listings: CarFormData[] }[];
 }
 
 type SortField = 'vehicle' | 'price' | 'mileage' | 'pricePerMile' | 'score';
@@ -220,7 +225,18 @@ const FilterControls = memo(function FilterControls({
   );
 });
 
-export function SavedListings({ listings, onClear, onEdit, onDelete, onTogglePin }: SavedListingsProps) {
+export function SavedListings({ 
+  listings, 
+  onClear, 
+  onEdit, 
+  onDelete, 
+  onTogglePin, 
+  onShare, 
+  onSaveList, 
+  onLoadList,
+  onDeleteList,
+  savedLists = [] 
+}: SavedListingsProps) {
   // Component state
   const [viewMode, setViewMode] = useState<'grid' | 'table'>(() => {
     if (typeof window !== 'undefined') {
@@ -238,6 +254,10 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onTogglePin
   const [mileageRange, setMileageRange] = useState<[number, number]>([MILEAGE_MIN, MILEAGE_MAX]);
   const [ppmRange, setPpmRange] = useState<[number, number]>([PPM_MIN, PPM_MAX]);
   const [yearRange, setYearRange] = useState<[number, number]>([YEAR_MIN, YEAR_MAX]);
+  const [showListsView, setShowListsView] = useState(false);
+  const [newListName, setNewListName] = useState('');
+  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
+  const [listToReplace, setListToReplace] = useState<{ index: number, name: string } | null>(null);
 
   // Memoized handlers
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -334,6 +354,7 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onTogglePin
   };
 
   const handleSort = (field: SortField) => {
+    console.log('Sorting by:', field, 'Current direction:', sortDirection);
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -350,6 +371,9 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onTogglePin
   };
 
   const filteredAndSortedListings = useMemo(() => {
+    console.log('Recalculating filtered and sorted listings');
+    console.log('Current sort field:', sortField);
+    console.log('Current sort direction:', sortDirection);
     return listings
       .map((listing, index) => ({ ...listing, originalIndex: index }))
       .filter((listing) => {
@@ -413,9 +437,33 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onTogglePin
     }
   };
 
-  if (listings.length === 0) {
-    return null;
-  }
+  const handleSaveList = () => {
+    if (!onSaveList) {
+      console.error('onSaveList prop is not provided');
+      return;
+    }
+    if (newListName.trim() && listings.length > 0) {
+      // Find if a list with this name already exists
+      const existingListIndex = savedLists.findIndex(list => list.name === newListName.trim());
+      if (existingListIndex !== -1) {
+        // Show confirmation dialog
+        setListToReplace({ index: existingListIndex, name: newListName.trim() });
+        setShowReplaceConfirm(true);
+      } else {
+        // No existing list, save directly
+        onSaveList(newListName.trim(), listings);
+      }
+    }
+  };
+
+  const handleConfirmReplace = () => {
+    if (listToReplace) {
+      // Pass the existing index to onSaveList instead of deleting and creating new
+      onSaveList(listToReplace.name, listings, listToReplace.index);
+      setShowReplaceConfirm(false);
+      setListToReplace(null);
+    }
+  };
 
   return (
     <Card className="shadow-lg border-blue-200">
@@ -423,226 +471,245 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onTogglePin
         <div className="flex justify-between items-center">
           <CardTitle className="text-2xl">Saved Listings</CardTitle>
           <div className="flex items-center gap-2">
-            {/* Mobile filters button */}
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowFiltersModal(true)}
-              className="md:hidden"
+              onClick={() => setShowListsView(!showListsView)}
+              title={showListsView ? "Show Listings" : "Show Lists"}
+              className="flex items-center gap-2 min-w-[80px] justify-center"
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              {showListsView ? <Grid className="h-4 w-4" /> : <List className="h-4 w-4" />}
+              <span className="text-sm">{showListsView ? "Listings" : "Lists"}</span>
             </Button>
-            {/* Hide view toggle on mobile */}
-            <div className="hidden sm:flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setViewMode('grid')}
-                className={viewMode === 'grid' ? 'bg-white/20' : ''}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setViewMode('table')}
-                className={viewMode === 'table' ? 'bg-white/20' : ''}
-              >
-                <TableIcon className="h-4 w-4" />
-              </Button>
-            </div>
-            <Button variant="ghost" onClick={onClear}>Clear All</Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onShare}
+              title="Share Listings"
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="p-4">
-        <div className="flex gap-6">
-          {/* Desktop sidebar with filters */}
-          <div className="hidden md:block w-64 shrink-0">
-            <FilterControls {...filterProps} />
-          </div>
-
-          {/* Main content area */}
-          <div className="flex-1">
-            {viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                {filteredAndSortedListings.map((listing) => {
-                  const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
-                  const rating = getRatingFromScore(valueScore);
-                  const maxMileage = getEstimatedLifetimeMiles(listing.make);
-                  const remainingMiles = Math.max(0, maxMileage - listing.mileage);
-
-                  return (
-                    <div key={`${listing.make}-${listing.model}-${listing.year}-${listing.originalIndex}`} 
-                      className={`bg-white rounded-lg overflow-hidden border border-gray-200 transition-colors ${
-                        listing.pinned 
-                          ? 'shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:border-red-300' 
-                          : 'shadow-md hover:border-blue-300'
-                      }`}
-                    >
-                      <div className={`p-4 ${listing.pinned ? 'bg-red-50' : 'bg-blue-50'}`}>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold text-lg text-gray-900">
-                              {listing.year} {listing.make} {listing.model}
-                            </h3>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {formatNumber(listing.mileage)} miles
-                            </p>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => onTogglePin(listing.originalIndex)}
-                              className={listing.pinned ? 'text-red-600' : 'text-gray-400'}
-                            >
-                              <Pin className={`h-4 w-4 ${listing.pinned ? 'fill-current' : ''}`} />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => onEdit(listing)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-4 space-y-4">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">Price</p>
-                            <p className="text-lg font-semibold text-gray-900">{formatCurrency(listing.price)}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium text-gray-600">Value Rating</p>
-                            <p className={`text-lg font-semibold ${getRatingColor(rating)}`}>{rating}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">Remaining Miles</p>
-                            <p className="text-gray-900">{formatNumber(remainingMiles)}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium text-gray-600">Cost/Mile</p>
-                            <p className="text-gray-900">${(listing.price / remainingMiles).toFixed(2)}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-end gap-2 pt-2">
-                          {listing.url && (
-                            <a 
-                              href={listing.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800"
-                              title="View Original Listing"
-                            >
-                              <LinkIcon className="h-4 w-4" />
-                            </a>
-                          )}
-                          <a
-                            href={`https://www.carcomplaints.com/${listing.make.charAt(0).toUpperCase() + listing.make.slice(1).toLowerCase()}/${listing.model.charAt(0).toUpperCase() + listing.model.slice(1).toLowerCase()}/${listing.year}/`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-orange-600 hover:text-orange-800"
-                            title="View Car Complaints"
-                          >
-                            <AlertTriangle className="h-4 w-4" />
-                          </a>
-                          <a
-                            href={`https://www.kbb.com/${listing.make.toLowerCase()}/${listing.model.toLowerCase()}/${listing.year}/`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-green-600 hover:text-green-800"
-                            title="View Kelley Blue Book Value"
-                          >
-                            <DollarSign className="h-4 w-4" />
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+        {showListsView ? (
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="New list name"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+                className="flex-1"
+              />
+              <Button
+                onClick={handleSaveList}
+                disabled={!newListName.trim() || listings.length === 0}
+              >
+                Save Current List
+              </Button>
+            </div>
+            {savedLists.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No saved lists yet. Save your current listings as a new list!</p>
+                {listings.length === 0 && (
+                  <p className="text-gray-500 mt-2">Add some listings first to create a new list.</p>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={selectedIndices.length === filteredAndSortedListings.length}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('vehicle')}>
-                        Vehicle {getSortIcon('vehicle')}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('price')}>
-                        Price {getSortIcon('price')}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('mileage')}>
-                        Current Miles {getSortIcon('mileage')}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('pricePerMile')}>
-                        Price/Mile {getSortIcon('pricePerMile')}
-                      </TableHead>
-                      <TableHead className="cursor-pointer" onClick={() => handleSort('score')}>
-                        Score {getSortIcon('score')}
-                      </TableHead>
-                      <TableHead>Links</TableHead>
-                      <TableHead>
-                        Actions
-                      </TableHead>
+                      <TableHead>List Name</TableHead>
+                      <TableHead>Listings</TableHead>
+                      <TableHead className="w-[200px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
+                    {savedLists.map((list, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{list.name}</TableCell>
+                        <TableCell>{list.listings.length} listings</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                onLoadList(list.listings);
+                                setShowListsView(false);
+                                setNewListName(list.name);
+                              }}
+                            >
+                              Load List
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onDeleteList(index)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        ) : listings.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No saved listings yet. Import some listings or add new ones!</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex gap-6">
+              {/* Desktop sidebar with filters */}
+              <div className="hidden md:block w-64 shrink-0">
+                <FilterControls {...filterProps} />
+              </div>
+
+              {/* Main content area */}
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-4">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowFiltersModal(true)}
+                    className="md:hidden"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </Button>
+                  
+                  {!showListsView && (
+                    <div className="flex items-center gap-2 flex-1">
+                      <Input
+                        value={newListName}
+                        onChange={(e) => setNewListName(e.target.value)}
+                        placeholder="Unnamed List"
+                        className={`${!newListName ? "text-gray-400" : "text-gray-700"} max-w-[200px]`}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSaveList}
+                        disabled={!newListName.trim() || listings.length === 0}
+                      >
+                        Save List
+                      </Button>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setViewMode('grid')}
+                        className={`${viewMode === 'grid' ? 'bg-gray-100' : ''}`}
+                      >
+                        <LayoutGrid className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setViewMode('table')}
+                        className={`${viewMode === 'table' ? 'bg-gray-100' : ''}`}
+                      >
+                        <TableIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="h-6 w-px bg-gray-200" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        onDelete(selectedIndices);
+                        setSelectedIndices([]);
+                      }}
+                      title="Delete Selected"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredAndSortedListings.map((listing) => {
                       const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
                       const rating = getRatingFromScore(valueScore);
-                      const pricePerMile = calculatePricePerRemainingMile(listing.price, listing.mileage, listing.make);
-                      const lifetimeMiles = getEstimatedLifetimeMiles(listing.make);
-                      const remainingMiles = Math.max(0, lifetimeMiles - listing.mileage);
+                      const maxMileage = getEstimatedLifetimeMiles(listing.make);
+                      const remainingMiles = Math.max(0, maxMileage - listing.mileage);
 
                       return (
-                        <TableRow 
-                          key={listing.originalIndex}
-                          className={`${listing.pinned ? 'bg-red-50 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : undefined}`}
+                        <div key={`${listing.make}-${listing.model}-${listing.year}-${listing.originalIndex}`} 
+                          className={`bg-white rounded-lg overflow-hidden border border-gray-200 transition-colors ${
+                            listing.pinned 
+                              ? 'shadow-[0_0_15px_rgba(239,68,68,0.3)] hover:border-red-300 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]' 
+                              : 'shadow-md hover:border-blue-300 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]'
+                          }`}
                         >
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedIndices.includes(listing.originalIndex)}
-                              onCheckedChange={() => handleSelect(listing.originalIndex)}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {listing.year} {listing.make} {listing.model}
+                          <div className={`p-4 ${listing.pinned ? 'bg-red-50' : 'bg-blue-50'}`}>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-semibold text-lg text-gray-900">
+                                  {listing.year} {listing.make} {listing.model}
+                                </h3>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {formatNumber(listing.mileage)} miles
+                                </p>
+                              </div>
+                              <div className="flex items-start gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => onTogglePin(listing.originalIndex)}
+                                  className={listing.pinned ? 'text-red-600' : 'text-gray-400'}
+                                >
+                                  <Pin className={`h-4 w-4 ${listing.pinned ? 'fill-current' : ''}`} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => onEdit(listing)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell>{formatCurrency(listing.price)}</TableCell>
-                          <TableCell>{formatNumber(listing.mileage)}</TableCell>
-                          <TableCell>{pricePerMile > 0 ? `$${pricePerMile.toFixed(2)}` : 'N/A'}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              {rating}
-                              <span className={getRatingColor(rating)}>
-                                {valueScore < 0.3 ? (
-                                  <TrendingDown className="h-4 w-4 text-green-600" />
-                                ) : (
-                                  <TrendingUp className="h-4 w-4 text-red-600" />
-                                )}
-                              </span>
+                          </div>
+
+                          <div className="p-4 space-y-4">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="text-sm font-medium text-gray-600">Price</p>
+                                <p className="text-lg font-semibold text-gray-900">{formatCurrency(listing.price)}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-medium text-gray-600">Value Rating</p>
+                                <p className={`text-lg font-semibold ${getRatingColor(rating)}`}>{rating}</p>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2 justify-end">
+
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="text-sm font-medium text-gray-600">Remaining Miles</p>
+                                <p className="text-gray-900">{formatNumber(remainingMiles)}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-medium text-gray-600">Cost/Mile</p>
+                                <p className="text-gray-900">${(listing.price / remainingMiles).toFixed(2)}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
                               {listing.url && (
                                 <a 
                                   href={listing.url} 
@@ -654,18 +721,18 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onTogglePin
                                   <LinkIcon className="h-4 w-4" />
                                 </a>
                               )}
-                              <a 
+                              <a
                                 href={`https://www.carcomplaints.com/${listing.make.charAt(0).toUpperCase() + listing.make.slice(1).toLowerCase()}/${listing.model.charAt(0).toUpperCase() + listing.model.slice(1).toLowerCase()}/${listing.year}/`}
-                                target="_blank" 
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-orange-600 hover:text-orange-800"
                                 title="View Car Complaints"
                               >
                                 <AlertTriangle className="h-4 w-4" />
                               </a>
-                              <a 
+                              <a
                                 href={`https://www.kbb.com/${listing.make.toLowerCase()}/${listing.model.toLowerCase()}/${listing.year}/`}
-                                target="_blank" 
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-green-600 hover:text-green-800"
                                 title="View Kelley Blue Book Value"
@@ -673,37 +740,176 @@ export function SavedListings({ listings, onClear, onEdit, onDelete, onTogglePin
                                 <DollarSign className="h-4 w-4" />
                               </a>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onTogglePin(listing.originalIndex)}
-                                className={listing.pinned ? 'text-red-600' : 'text-gray-400'}
-                                title={listing.pinned ? "Unpin" : "Pin"}
-                              >
-                                <Pin className={`h-4 w-4 ${listing.pinned ? 'fill-current' : ''}`} />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onEdit(listing)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                          </div>
+                        </div>
                       );
                     })}
-                  </TableBody>
-                </Table>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">
+                            <Checkbox
+                              checked={selectedIndices.length === filteredAndSortedListings.length}
+                              onCheckedChange={handleSelectAll}
+                            />
+                          </TableHead>
+                          <TableHead className="cursor-pointer" onClick={() => handleSort('vehicle')}>
+                            Vehicle {getSortIcon('vehicle')}
+                          </TableHead>
+                          <TableHead className="cursor-pointer" onClick={() => handleSort('price')}>
+                            Price {getSortIcon('price')}
+                          </TableHead>
+                          <TableHead className="cursor-pointer" onClick={() => handleSort('mileage')}>
+                            Current Miles {getSortIcon('mileage')}
+                          </TableHead>
+                          <TableHead className="cursor-pointer" onClick={() => handleSort('pricePerMile')}>
+                            Price/Mile {getSortIcon('pricePerMile')}
+                          </TableHead>
+                          <TableHead className="cursor-pointer" onClick={() => handleSort('score')}>
+                            Score {getSortIcon('score')}
+                          </TableHead>
+                          <TableHead>Links</TableHead>
+                          <TableHead>
+                            Actions
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredAndSortedListings.map((listing) => {
+                          const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
+                          const rating = getRatingFromScore(valueScore);
+                          const pricePerMile = calculatePricePerRemainingMile(listing.price, listing.mileage, listing.make);
+                          const lifetimeMiles = getEstimatedLifetimeMiles(listing.make);
+                          const remainingMiles = Math.max(0, lifetimeMiles - listing.mileage);
+
+                          return (
+                            <TableRow 
+                              key={listing.originalIndex}
+                              className={`${listing.pinned ? 'bg-red-50 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : undefined}`}
+                            >
+                              <TableCell>
+                                <Checkbox
+                                  checked={selectedIndices.includes(listing.originalIndex)}
+                                  onCheckedChange={() => handleSelect(listing.originalIndex)}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  {listing.year} {listing.make} {listing.model}
+                                </div>
+                              </TableCell>
+                              <TableCell>{formatCurrency(listing.price)}</TableCell>
+                              <TableCell>{formatNumber(listing.mileage)}</TableCell>
+                              <TableCell>{pricePerMile > 0 ? `$${pricePerMile.toFixed(2)}` : 'N/A'}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  {rating}
+                                  <span className={getRatingColor(rating)}>
+                                    {valueScore < 0.3 ? (
+                                      <TrendingDown className="h-4 w-4 text-green-600" />
+                                    ) : (
+                                      <TrendingUp className="h-4 w-4 text-red-600" />
+                                    )}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2 justify-end">
+                                  {listing.url && (
+                                    <a 
+                                      href={listing.url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800"
+                                      title="View Original Listing"
+                                    >
+                                      <LinkIcon className="h-4 w-4" />
+                                    </a>
+                                  )}
+                                  <a 
+                                    href={`https://www.carcomplaints.com/${listing.make.charAt(0).toUpperCase() + listing.make.slice(1).toLowerCase()}/${listing.model.charAt(0).toUpperCase() + listing.model.slice(1).toLowerCase()}/${listing.year}/`}
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-orange-600 hover:text-orange-800"
+                                    title="View Car Complaints"
+                                  >
+                                    <AlertTriangle className="h-4 w-4" />
+                                  </a>
+                                  <a 
+                                    href={`https://www.kbb.com/${listing.make.toLowerCase()}/${listing.model.toLowerCase()}/${listing.year}/`}
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-green-600 hover:text-green-800"
+                                    title="View Kelley Blue Book Value"
+                                  >
+                                    <DollarSign className="h-4 w-4" />
+                                  </a>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => onTogglePin(listing.originalIndex)}
+                                    className={listing.pinned ? 'text-red-600' : 'text-gray-400'}
+                                    title={listing.pinned ? "Unpin" : "Pin"}
+                                  >
+                                    <Pin className={`h-4 w-4 ${listing.pinned ? 'fill-current' : ''}`} />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => onEdit(listing)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
+
+      {/* Replace confirmation dialog */}
+      <Dialog open={showReplaceConfirm} onOpenChange={setShowReplaceConfirm}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Replace Existing List?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>A list named "{listToReplace?.name}" already exists. Do you want to replace it with the current listings?</p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowReplaceConfirm(false);
+                setListToReplace(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleConfirmReplace}
+            >
+              Replace
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Mobile filters modal */}
       <Dialog open={showFiltersModal} onOpenChange={setShowFiltersModal}>

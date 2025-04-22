@@ -101,21 +101,7 @@ export function CarForm({ onSubmit, onChange, initialData }: CarFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Enhanced validation with toast notifications
-    if (formData.price < 500) {
-      toast.error("Price too low", {
-        description: "Car price must be at least $500."
-      });
-      return;
-    }
-
-    if (formData.price > 1000000) {
-      toast.error("Price too high", {
-        description: "Car price cannot exceed $1,000,000."
-      });
-      return;
-    }
-
+    // Remove the price validation checks
     onSubmit(formData);
 
     // Only clear form if we're not editing
@@ -261,14 +247,11 @@ export function CarForm({ onSubmit, onChange, initialData }: CarFormProps) {
             <Input
               id="price"
               type="number"
-              min="500"
-              max="1000000"
-              step="100"
               placeholder="Car value (e.g. 25000)"
               value={formData.price || ""}
               onChange={(e) => {
                 const value = parseInt(e.target.value) || 0;
-                setFormData(prev => ({ ...prev, price: Math.max(0, Math.min(value, 1000000)) }));
+                setFormData(prev => ({ ...prev, price: value }));
               }}
               required
               className="w-full"
@@ -280,11 +263,12 @@ export function CarForm({ onSubmit, onChange, initialData }: CarFormProps) {
             <Input
               id="mileage"
               type="number"
-              min="0"
-              step="100"
-              placeholder="50000"
+              placeholder="Enter mileage"
               value={formData.mileage || ""}
-              onChange={(e) => setFormData(prev => ({ ...prev, mileage: parseInt(e.target.value) || 0 }))}
+              onChange={(e) => setFormData(prev => ({ 
+                ...prev, 
+                mileage: parseInt(e.target.value) || 0 
+              }))}
               required
               className="w-full"
             />
