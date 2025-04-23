@@ -3,31 +3,39 @@ import {
   calculateValueScore, 
   getRatingFromScore, 
   formatCurrency, 
-  formatNumber,
-  MAX_MILEAGE_BY_MAKE
-} from "@/utils/carCalculations";
+  formatNumber 
+} from "@/utils/carCalculationsEPA";
 import { CarFormData } from "./CarForm";
 import { Progress } from "@/components/ui/progress";
-import { MaxMileageModal } from "./MaxMileageModal";
-import { AlertTriangle, InfoIcon } from "lucide-react";
+import { AlertTriangle, InfoIcon, Fuel } from "lucide-react";
+import vehicleData from '@/data/vehicle-data.json';
+import { VehicleData, getVehicleModelData } from '@/utils/vehicleDataTypes';
 
 interface ResultsDisplayProps {
   carData: CarFormData | null;
 }
 
 export function ResultsDisplay({ carData }: ResultsDisplayProps) {
+  // Get EPA data if available
+  const modelData = carData ? getVehicleModelData(
+    vehicleData as VehicleData,
+    carData.year.toString(),
+    carData.make,
+    carData.model
+  ) : null;
+
   // Calculate values only if we have valid data
   const valueScore = carData ? calculateValueScore(
     carData.price,
     carData.mileage,
-    carData.make
+    carData.make,
+    carData.model,
+    carData.year.toString()
   ) : 0;
   
   const rating = carData ? getRatingFromScore(valueScore) : "N/A";
   
-  const maxMileage = carData?.make ? 
-    (MAX_MILEAGE_BY_MAKE[carData.make.toLowerCase()] || 250000) : 
-    250000;
+  const maxMileage = modelData?.estimatedLifetimeMiles || 200000;
   
   const remainingMiles = carData ? 
     Math.max(0, maxMileage - carData.mileage) : 
@@ -55,56 +63,57 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
   };
 
   return (
-    <Card className="w-full h-full shadow-lg border-blue-200 flex flex-col">
-      <CardHeader className="bg-blue-700 text-white rounded-t-lg shrink-0 pb-4">
-        {carData && (
-          <div className="text-center">
-            <h3 className="text-xl font-medium text-white/90">
-              {carData.year} {carData.make} {carData.model}
-            </h3>
-            <p className="text-white/75 text-sm mt-1">
-              {formatNumber(carData.mileage)} miles | {formatCurrency(carData.price)}
-            </p>
-          </div>
-        )}
+    <Card className="w-full h-full shadow-lg border-blue-200">
+      <CardHeader className="bg-blue-700 text-white rounded-t-lg">
+        <CardTitle className="text-center text-2xl">Value Analysis</CardTitle>
       </CardHeader>
-      <CardContent className="pt-8 flex-1 flex flex-col">
+      <CardContent className="p-6">
         {!carData ? (
-          <div className="flex-1 flex items-center justify-center text-gray-400 text-lg">
-            Enter car details to see analysis
+          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <AlertTriangle className="h-12 w-12 mb-4" />
+            <p className="text-center">
+              Enter car details to see value analysis
+            </p>
           </div>
         ) : (
           <>
-            {/* Vehicle Life Section */}
-            <div className="space-y-2 mb-8">
-              <div className="flex justify-between items-center text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Vehicle Life</span>
-                  <MaxMileageModal />
-                </div>
-                <span className="text-gray-600">
-                  {formatNumber(carData.mileage)} / {formatNumber(maxMileage)} miles
-                </span>
+            {/* Life Used Progress */}
+            <div className="mb-8">
+              <div className="flex justify-between text-sm mb-2">
+                <span>Life Used</span>
+                <span>{lifeUsedPercentage}%</span>
               </div>
-              <div className="relative">
-                <Progress 
-                  value={lifeUsedPercentage}
-                  className="h-2.5"
-                />
-                <div 
-                  className="absolute h-5 w-0.5 bg-red-500 -bottom-1.5"
-                  style={{ left: `${(maxMileage / Math.max(maxMileage, carData.mileage)) * 100}%` }}
-                />
-              </div>
-              {carData.mileage > maxMileage && (
-                <div className="text-sm text-red-500 flex items-center gap-1.5">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span>Exceeded estimated life by {formatNumber(carData.mileage - maxMileage)} miles</span>
-                </div>
-              )}
+              <Progress value={lifeUsedPercentage} className="h-2" />
             </div>
 
-            {/* Key Metrics Grid */}
+            {/* EPA Data Display */}
+            {modelData && (
+              <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2 mb-4">
+                  <Fuel className="h-5 w-5 text-blue-600" />
+                  <h3 className="font-medium">EPA Data</h3>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-sm text-gray-600">City MPG</p>
+                    <p className="text-lg font-semibold">{modelData.mpg.city}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Highway MPG</p>
+                    <p className="text-lg font-semibold">{modelData.mpg.highway}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Combined MPG</p>
+                    <p className="text-lg font-semibold">{modelData.mpg.combined}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Vehicle Type: {modelData.type}
+                </p>
+              </div>
+            )}
+
+            {/* Value Metrics */}
             <div className="grid grid-cols-2 gap-6 mb-8">
               <div className="bg-green-50 rounded-lg p-4">
                 <p className="text-sm text-green-700 font-medium mb-1 text-center">Remaining Miles</p>
@@ -133,7 +142,7 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
               <div className="flex items-start gap-2">
                 <InfoIcon className="h-4 w-4 mt-0.5 shrink-0" />
                 <p>
-                  Score calculated from price divided by remaining life. Lower scores indicate better value.
+                  Score calculated based on price, remaining life, and fuel efficiency. Lower scores indicate better value.
                 </p>
               </div>
             </div>

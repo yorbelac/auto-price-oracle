@@ -4,9 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CAR_MAKES, getModelsByMake } from "@/data/carData";
-import { toast } from "@/components/ui/sonner";
 import { Link } from "lucide-react";
+import vehicleData from '@/data/vehicle-data.json';
+import { VehicleData, getAvailableYears, getAvailableMakes, getAvailableModels } from '@/utils/vehicleDataTypes';
 
 export interface CarFormData {
   make: string;
@@ -19,64 +19,63 @@ export interface CarFormData {
 }
 
 interface CarFormProps {
-  onSubmit: (data: CarFormData) => void;
+  onSubmit?: (data: CarFormData) => void;
   onChange?: (data: CarFormData) => void;
+  onCancel?: () => void;
   initialData?: CarFormData;
 }
 
-export function CarForm({ onSubmit, onChange, initialData }: CarFormProps) {
-  const [formData, setFormData] = useState<CarFormData>({
-    make: initialData?.make || "",
-    model: initialData?.model || "",
-    year: initialData?.year || new Date().getFullYear(),
-    price: initialData?.price || 0,
-    mileage: initialData?.mileage || 0,
-    url: initialData?.url || "",
-    pinned: initialData?.pinned || false,
-  });
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
+export function CarForm({ onSubmit, onChange, onCancel, initialData }: CarFormProps) {
+  const defaultFormState: CarFormData = {
+    make: "",
+    model: "",
+    year: new Date().getFullYear(),
+    price: 0,
+    mileage: 0,
+    url: "",
+    pinned: false
+  };
 
-  // Update available models when make changes
-  useEffect(() => {
-    if (formData.make) {
-      const models = getModelsByMake(formData.make);
-      setAvailableModels(models);
-      // Only reset model if we're not editing and the current model isn't in the new list
-      if (!initialData && (!formData.model || !models.includes(formData.model))) {
-        setFormData(prev => ({ ...prev, model: models[0] || '' }));
-      }
-    } else {
-      setAvailableModels([]);
-      setFormData(prev => ({ ...prev, model: '' }));
-    }
-  }, [formData.make, initialData]);
+  const [formData, setFormData] = useState<CarFormData>(defaultFormState);
 
-  // Update form fields when initialData changes
+  // Get available years from EPA data
+  const years = getAvailableYears(vehicleData as VehicleData);
+  
+  // Get available makes for the selected year
+  const makes = getAvailableMakes(vehicleData as VehicleData, formData.year.toString());
+  
+  // Get available models for the selected make and year
+  const models = getAvailableModels(
+    vehicleData as VehicleData,
+    formData.year.toString(),
+    formData.make
+  );
+
+  // Effect to update form when initialData changes
   useEffect(() => {
     if (initialData) {
-      // First set the make
-      setFormData(prev => ({ ...prev, make: initialData.make }));
-      
-      // Then get the available models for the make
-      const models = getModelsByMake(initialData.make);
-      setAvailableModels(models);
-      
-      // Finally set the rest of the form data including the model
-      // This ensures the model is set after the available models are populated
+      // First set the year and make
+      setFormData(prev => ({
+        ...prev,
+        year: initialData.year || new Date().getFullYear(),
+        make: initialData.make || "",
+      }));
+
+      // Then set the model after a small delay to ensure the models list is updated
       setTimeout(() => {
         setFormData(prev => ({
           ...prev,
-          model: initialData.model,
-          year: initialData.year,
-          mileage: initialData.mileage,
-          price: initialData.price,
-          url: initialData.url || '',
-          pinned: initialData.pinned || false,
+          model: initialData.model || "",
+          price: initialData.price || 0,
+          mileage: initialData.mileage || 0,
+          url: initialData.url || "",
+          pinned: initialData.pinned || false
         }));
       }, 0);
+    } else {
+      setFormData(defaultFormState);
     }
   }, [initialData]);
-
 
   // Add a useEffect to emit changes
   useEffect(() => {
@@ -96,131 +95,103 @@ export function CarForm({ onSubmit, onChange, initialData }: CarFormProps) {
     e.preventDefault();
     if (onSubmit) {
       onSubmit(formData);
+      // Only reset form if we're not in edit mode
+      if (!initialData) {
+        setFormData(defaultFormState);
+      }
     }
   };
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 30 }, (_, i) => currentYear - i);
+  const handleCancel = () => {
+    setFormData(defaultFormState);
+    // Clear the initialData to switch to new car creation mode
+    if (onCancel) {
+      onCancel();
+    }
+  };
 
   return (
     <Card className="w-full h-full shadow-lg border-blue-200">
       <CardHeader className="bg-blue-700 text-white rounded-t-lg">
         <CardTitle className="text-center text-2xl">Enter Car Details</CardTitle>
       </CardHeader>
-      <CardContent className="pt-6">
+      <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="year">Year</Label>
-            {/* Mobile native select */}
-            <select
-              id="year-mobile"
-              value={formData.year.toString()}
-              onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
-              required
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:hidden"
+            <Select
+              value={formData.year?.toString()}
+              onValueChange={(value) => {
+                setFormData(prev => ({
+                  ...prev,
+                  year: parseInt(value),
+                  // Clear make and model when year changes
+                  make: "",
+                  model: ""
+                }));
+              }}
             >
-              <option value="">Select year</option>
-              {years.map(year => (
-                <option key={year} value={year.toString()}>
-                  {year}
-                </option>
-              ))}
-            </select>
-            {/* Desktop custom select */}
-            <div className="hidden sm:block">
-              <Select
-                value={formData.year.toString()}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, year: parseInt(value) }))}
-                required
-              >
-                <SelectTrigger id="year" className="w-full">
-                  <SelectValue placeholder="Select year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <SelectTrigger>
+                <SelectValue placeholder="Select year" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="make">Make</Label>
-            {/* Mobile native select */}
-            <select
-              id="make-mobile"
+            <Select
               value={formData.make}
-              onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:hidden"
+              onValueChange={(value) => {
+                setFormData(prev => ({
+                  ...prev,
+                  make: value,
+                  // Clear model when make changes
+                  model: ""
+                }));
+              }}
             >
-              <option value="">Select make</option>
-              {CAR_MAKES.map(make => (
-                <option key={make.name} value={make.name}>
-                  {make.name}
-                </option>
-              ))}
-            </select>
-            {/* Desktop custom select */}
-            <div className="hidden sm:block">
-              <Select
-                value={formData.make}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, make: value }))}
-              >
-                <SelectTrigger id="make">
-                  <SelectValue placeholder="Select make" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CAR_MAKES.map(make => (
-                    <SelectItem key={make.name} value={make.name}>
-                      {make.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <SelectTrigger>
+                <SelectValue placeholder="Select make" />
+              </SelectTrigger>
+              <SelectContent>
+                {makes.map((make) => (
+                  <SelectItem key={make} value={make}>
+                    {make}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="model">Model</Label>
-            {/* Mobile native select */}
-            <select
-              id="model-mobile"
+            <Select
               value={formData.model}
-              onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
-              disabled={!formData.make || availableModels.length === 0}
-              required
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:hidden"
+              onValueChange={(value) => {
+                setFormData(prev => ({
+                  ...prev,
+                  model: value
+                }));
+              }}
             >
-              <option value="">Select model</option>
-              {availableModels.map(modelName => (
-                <option key={modelName} value={modelName}>
-                  {modelName}
-                </option>
-              ))}
-            </select>
-            {/* Desktop custom select */}
-            <div className="hidden sm:block">
-              <Select
-                value={formData.model}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, model: value }))}
-                disabled={!formData.make || availableModels.length === 0}
-                required
-              >
-                <SelectTrigger id="model" className="w-full">
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableModels.map((modelName) => (
-                    <SelectItem key={modelName} value={modelName}>
-                      {modelName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <SelectTrigger>
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                {models.map((model) => (
+                  <SelectItem key={model} value={model}>
+                    {model}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -273,43 +244,19 @@ export function CarForm({ onSubmit, onChange, initialData }: CarFormProps) {
           </div>
 
           <div className="flex gap-2">
-            <Button 
-              type="submit" 
-              className="flex-1 bg-blue-700 hover:bg-blue-800 text-white"
-              disabled={!formData.make || !formData.model || !formData.year || !formData.price || !formData.mileage}
-            >
-              {initialData ? "Save Changes" : "Save Listing"}
-            </Button>
-            
             {initialData && (
-              <Button 
+              <Button
                 type="button"
                 variant="outline"
-                className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50"
-                onClick={() => {
-                  setFormData({
-                    make: "",
-                    model: "",
-                    year: new Date().getFullYear(),
-                    price: 0,
-                    mileage: 0,
-                    url: "",
-                    pinned: false,
-                  });
-                  onSubmit({
-                    make: "",
-                    model: "",
-                    year: new Date().getFullYear(),
-                    price: 0,
-                    mileage: 0,
-                    url: "",
-                    pinned: false,
-                  });
-                }}
+                className="flex-1"
+                onClick={handleCancel}
               >
                 Cancel
               </Button>
             )}
+            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
+              {initialData ? "Update Listing" : "Save Listing"}
+            </Button>
           </div>
         </form>
       </CardContent>

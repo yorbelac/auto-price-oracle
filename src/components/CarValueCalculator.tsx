@@ -8,33 +8,34 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Share2, Copy } from "lucide-react";
 
 const STORAGE_KEY = "savedCarListings";
-const SAVED_LISTS_KEY = "savedCarListsCollection";
-const CURRENT_LIST_NAME_KEY = "currentListName";
+const LISTS_STORAGE_KEY = "savedCarLists";
+
+interface SavedList {
+  name: string;
+  listings: CarFormData[];
+}
 
 export function CarValueCalculator() {
   const [calculatedCar, setCalculatedCar] = useState<CarFormData | null>(null);
   const [savedListings, setSavedListings] = useState<CarFormData[]>([]);
   const [editingListing, setEditingListing] = useState<CarFormData | null>(null);
+  const [editingListingIndex, setEditingListingIndex] = useState<number | null>(null);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
+  const [savedLists, setSavedLists] = useState<SavedList[]>([]);
+  const [currentListName, setCurrentListName] = useState<string>("");
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareData, setShareData] = useState("");
-  const [savedLists, setSavedLists] = useState<Array<{ name: string; listings: CarFormData[] }>>([]);
-  const [currentListName, setCurrentListName] = useState<string>("");
-  const [editingListingIndex, setEditingListingIndex] = useState<number | null>(null);
 
-  // Load saved listings, lists, and current list name from local storage
+  // Load saved listings and lists from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      setSavedListings(JSON.parse(saved));
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      setSavedListings(JSON.parse(savedData));
     }
-    const savedListsData = localStorage.getItem(SAVED_LISTS_KEY);
+
+    const savedListsData = localStorage.getItem(LISTS_STORAGE_KEY);
     if (savedListsData) {
       setSavedLists(JSON.parse(savedListsData));
-    }
-    const currentName = localStorage.getItem(CURRENT_LIST_NAME_KEY);
-    if (currentName) {
-      setCurrentListName(currentName);
     }
   }, []);
 
@@ -83,73 +84,79 @@ export function CarValueCalculator() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleCancel = () => {
+    setEditingListing(null);
+    setEditingListingIndex(null);
+    setCalculatedCar(null);
+  };
+
   const handleDeleteListings = (indices: number[]) => {
     const newListings = savedListings.filter((_, index) => !indices.includes(index));
     setSavedListings(newListings);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newListings));
+    setSelectedIndices([]);
     toast.success(`Deleted ${indices.length} listing${indices.length > 1 ? 's' : ''}`);
   };
 
-  const handleNewCar = () => {
-    setEditingListing(null);
-    setCalculatedCar(null);
-    toast.success("Form cleared for new car entry");
-  };
-
   const handleTogglePin = (index: number) => {
-    const updatedListings = savedListings.map((listing, i) => 
-      i === index ? { ...listing, pinned: !listing.pinned } : listing
-    );
-    setSavedListings(updatedListings);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedListings));
-    toast.success(updatedListings[index].pinned ? "Listing pinned!" : "Listing unpinned");
+    const newListings = savedListings.map((listing, i) => {
+      if (i === index) {
+        return { ...listing, pinned: !listing.pinned };
+      }
+      return listing;
+    });
+    setSavedListings(newListings);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newListings));
   };
 
-  const handleShare = () => {
-    const dataToShare = JSON.stringify(savedListings);
-    setShareData(dataToShare);
-    setShowShareDialog(true);
-  };
+  const handleShare = async (indices: number[]) => {
+    const selectedListings = savedListings.filter((_, index) => indices.includes(index));
+    const text = selectedListings.map(listing => 
+      `${listing.year} ${listing.make} ${listing.model}\n` +
+      `Price: $${listing.price.toLocaleString()}\n` +
+      `Mileage: ${listing.mileage.toLocaleString()}\n` +
+      (listing.url ? `Listing: ${listing.url}\n` : '') +
+      '---'
+    ).join('\n\n');
 
-  const handleSaveList = (name: string, listings: CarFormData[], existingIndex?: number) => {
-    let updatedLists;
-    if (existingIndex !== undefined) {
-      // Replace existing list
-      updatedLists = savedLists.map((list, index) => 
-        index === existingIndex ? { name, listings } : list
-      );
-    } else {
-      // Add new list
-      updatedLists = [...savedLists, { name, listings }];
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy to clipboard");
     }
-    setSavedLists(updatedLists);
-    setCurrentListName(name);
-    // Update current listings to match the saved list
-    setSavedListings(listings);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(listings));
-    localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(updatedLists));
-    localStorage.setItem(CURRENT_LIST_NAME_KEY, name);
-    toast.success(`List "${name}" ${existingIndex !== undefined ? 'updated' : 'saved'} successfully!`);
   };
 
-  const handleLoadList = (listings: CarFormData[], name: string) => {
-    setSavedListings(listings);
+  const handleSaveList = (name: string) => {
+    const newList = {
+      name,
+      listings: savedListings
+    };
+    const updatedLists = [...savedLists, newList];
+    setSavedLists(updatedLists);
+    localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify(updatedLists));
     setCurrentListName(name);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(listings));
-    localStorage.setItem(CURRENT_LIST_NAME_KEY, name);
-    toast.success("List loaded successfully!");
+    toast.success(`Saved list "${name}"`);
   };
 
-  const handleDeleteList = (index: number) => {
-    const updatedLists = savedLists.filter((_, i) => i !== index);
+  const handleLoadList = (name: string) => {
+    const list = savedLists.find(l => l.name === name);
+    if (list) {
+      setSavedListings(list.listings);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list.listings));
+      setCurrentListName(name);
+      toast.success(`Loaded list "${name}"`);
+    }
+  };
+
+  const handleDeleteList = (name: string) => {
+    const updatedLists = savedLists.filter(l => l.name !== name);
     setSavedLists(updatedLists);
-    // If we're deleting the current list, clear the current list name
-    if (savedLists[index].name === currentListName) {
+    localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify(updatedLists));
+    if (currentListName === name) {
       setCurrentListName("");
-      localStorage.removeItem(CURRENT_LIST_NAME_KEY);
     }
-    localStorage.setItem(SAVED_LISTS_KEY, JSON.stringify(updatedLists));
-    toast.success("List deleted successfully!");
+    toast.success(`Deleted list "${name}"`);
   };
 
   const handleImport = (data: string) => {
@@ -178,6 +185,7 @@ export function CarValueCalculator() {
               onSubmit={handleFormSubmit} 
               onChange={handleFormChange}
               initialData={editingListing || undefined}
+              onCancel={handleCancel}
             />
           </div>
         </div>
