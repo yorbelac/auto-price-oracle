@@ -1,24 +1,90 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   calculateValueScore, 
   getRatingFromScore, 
   formatCurrency, 
-  formatNumber 
-} from "@/utils/carCalculationsEPA";
+  formatNumber,
+  getEstimatedLifetimeMiles,
+  MAX_MILEAGE_BY_MAKE
+} from "@/utils/carCalculations";
 import { CarFormData } from "./CarForm";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, InfoIcon, Fuel } from "lucide-react";
+import { AlertTriangle, InfoIcon, Fuel, Car } from "lucide-react";
 import vehicleData from '@/data/vehicle-data.json';
 import { VehicleData, getVehicleModelData } from '@/utils/vehicleDataTypes';
 import { GasPriceModal } from "./GasPriceModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface ResultsDisplayProps {
   carData: CarFormData | null;
+  gasPrice: number;
+  onGasPriceChange: (price: number) => void;
 }
 
-export function ResultsDisplay({ carData }: ResultsDisplayProps) {
-  const [gasPrice, setGasPrice] = useState(0);
+// MaxMileageModal component
+function MaxMileageModal() {
+  // Convert the MAX_MILEAGE_BY_MAKE object into an array of [make, miles] pairs and ensure miles is a number
+  const makes = Object.entries(MAX_MILEAGE_BY_MAKE).sort((a, b) => a[0].localeCompare(b[0]));
+  const midpoint = Math.ceil(makes.length / 2);
+  const leftColumn = makes.slice(0, midpoint);
+  const rightColumn = makes.slice(midpoint);
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="ml-2" title="View Estimated Lifetime Miles">
+          <Car className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Maximum Mileage Estimates</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="text-sm text-gray-600">
+            <p className="mb-4">
+              These estimates are based on general brand reliability data and represent typical maximum mileage expectations. 
+              Actual vehicle lifespan can vary significantly based on:
+            </p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Model year and technological improvements</li>
+              <li>Maintenance history and care</li>
+              <li>Driving conditions and climate</li>
+              <li>Model-specific reliability</li>
+            </ul>
+          </div>
+          <div className="grid grid-cols-4 gap-4 text-sm">
+            {/* Headers */}
+            <div className="font-semibold py-2 border-b">Make</div>
+            <div className="text-right font-semibold py-2 border-b">Max Miles</div>
+            <div className="font-semibold py-2 border-b">Make</div>
+            <div className="text-right font-semibold py-2 border-b">Max Miles</div>
+            
+            {/* Left column data */}
+            {leftColumn.map(([make, miles]) => (
+              <React.Fragment key={make}>
+                <div className="py-2 capitalize">{make}</div>
+                <div className="text-right py-2">{Number(miles).toLocaleString()}</div>
+              </React.Fragment>
+            ))}
+            
+            {/* Right column data */}
+            {rightColumn.map(([make, miles]) => (
+              <React.Fragment key={make}>
+                <div className="py-2 capitalize">{make}</div>
+                <div className="text-right py-2">{Number(miles).toLocaleString()}</div>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function ResultsDisplay({ carData, gasPrice, onGasPriceChange }: ResultsDisplayProps) {
   // Get EPA data if available
   const modelData = carData ? getVehicleModelData(
     vehicleData as VehicleData,
@@ -38,7 +104,7 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
   
   const rating = carData ? getRatingFromScore(valueScore) : "N/A";
   
-  const maxMileage = modelData?.estimatedLifetimeMiles || 200000;
+  const maxMileage = carData ? getEstimatedLifetimeMiles(carData.make) : 200000;
   
   const remainingMiles = carData ? 
     Math.max(0, maxMileage - carData.mileage) : 
@@ -77,30 +143,39 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
   };
 
   return (
-    <Card className="w-full h-full shadow-lg border-blue-200">
-      <CardHeader className="bg-blue-700 text-white rounded-t-lg flex flex-row items-center justify-between">
-        <CardTitle className="text-center text-2xl">Value Analysis</CardTitle>
-        <div className="flex items-center">
-          {gasPrice > 0 && (
-            <span className="text-sm mr-2">${gasPrice.toFixed(2)}/gal</span>
-          )}
-          <GasPriceModal gasPrice={gasPrice} onGasPriceChange={setGasPrice} />
+    <Card className="shadow-lg border-blue-200">
+      <CardHeader className="bg-blue-700 text-white rounded-t-lg">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-2xl">Analysis</CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-white">
+                ${gasPrice.toFixed(2)}/gal
+              </span>
+              <GasPriceModal gasPrice={gasPrice} onGasPriceChange={onGasPriceChange} />
+            </div>
+            <MaxMileageModal />
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-6">
         {!carData ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <AlertTriangle className="h-12 w-12 mb-4" />
-            <p className="text-center">
-              Enter car details to see value analysis
-            </p>
+          <div className="text-center py-8 text-gray-500">
+            <p className="text-lg mb-2">Enter vehicle details to see analysis</p>
+            <p className="text-sm">Fill out the form on the left to calculate:</p>
+            <ul className="text-sm mt-2 space-y-1">
+              <li>• Value rating based on price and remaining life</li>
+              <li>• Cost per mile including fuel expenses</li>
+              <li>• EPA fuel economy data (when available)</li>
+              <li>• Vehicle life usage percentage</li>
+            </ul>
           </div>
         ) : (
           <>
             {/* Life Used Progress */}
             <div className="mb-8">
               <div className="flex justify-between text-sm mb-2">
-                <span>Life Used</span>
+                <span>Life Used ({formatNumber(carData.mileage)} of {formatNumber(maxMileage)} miles)</span>
                 <span>{lifeUsedPercentage}%</span>
               </div>
               <Progress value={lifeUsedPercentage} className="h-2" />

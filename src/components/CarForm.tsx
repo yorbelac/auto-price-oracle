@@ -62,7 +62,7 @@ export function CarForm({ onSubmit, onChange, onCancel, initialData }: CarFormPr
         year: initialData.year || new Date().getFullYear(),
         make: initialData.make || "",
       }));
-
+      
       // Then set the model after a small delay to ensure the models list is updated
       setTimeout(() => {
         setFormData(prev => ({
@@ -121,8 +121,8 @@ export function CarForm({ onSubmit, onChange, onCancel, initialData }: CarFormPr
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="year">Year</Label>
+          <div className="space-y-2">
+            <Label htmlFor="year">Year</Label>
               <Select
                 value={formData.year?.toString()}
                 onValueChange={(value) => {
@@ -146,9 +146,9 @@ export function CarForm({ onSubmit, onChange, onCancel, initialData }: CarFormPr
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+          </div>
 
-            <div className="space-y-2">
+          <div className="space-y-2">
               <Label htmlFor="condition">Condition</Label>
               <Select
                 value={formData.condition}
@@ -207,18 +207,18 @@ export function CarForm({ onSubmit, onChange, onCancel, initialData }: CarFormPr
                   model: value
                 }));
               }}
-            >
+              >
               <SelectTrigger>
-                <SelectValue placeholder="Select model" />
-              </SelectTrigger>
-              <SelectContent>
+                  <SelectValue placeholder="Select model" />
+                </SelectTrigger>
+                <SelectContent>
                 {models.map((model) => (
                   <SelectItem key={model} value={model}>
                     {model}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -272,7 +272,7 @@ export function CarForm({ onSubmit, onChange, onCancel, initialData }: CarFormPr
 
           <div className="flex gap-2">
             {initialData && (
-              <Button
+              <Button 
                 type="button"
                 variant="outline"
                 className="flex-1"

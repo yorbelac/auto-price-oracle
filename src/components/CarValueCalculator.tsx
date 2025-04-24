@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CarForm, CarFormData } from "./CarForm";
 import { ResultsDisplay } from "./ResultsDisplay";
 import { SavedListings } from "./SavedListings";
@@ -25,19 +25,84 @@ export function CarValueCalculator() {
   const [currentListName, setCurrentListName] = useState<string>("");
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareData, setShareData] = useState("");
+  const [gasPrice, setGasPrice] = useState(0);
 
-  // Load saved listings and lists from localStorage on mount
+  const handleImport = useCallback((data: string) => {
+    try {
+      const importedListings = JSON.parse(data);
+      if (Array.isArray(importedListings)) {
+        const newListings = [...savedListings, ...importedListings];
+        setSavedListings(newListings);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newListings));
+        toast.success("Listings imported successfully!");
+        setShowShareDialog(false);
+      } else {
+        toast.error("Invalid data format");
+      }
+    } catch (error) {
+      toast.error("Failed to import listings");
+    }
+  }, [savedListings]);
+
   useEffect(() => {
     const savedData = localStorage.getItem(STORAGE_KEY);
-    if (savedData) {
-      setSavedListings(JSON.parse(savedData));
-    }
-
     const savedListsData = localStorage.getItem(LISTS_STORAGE_KEY);
-    if (savedListsData) {
-      setSavedLists(JSON.parse(savedListsData));
+
+    if (!savedData && !savedListsData) {
+      // Create sample car listings
+      const sampleListings = [
+        {
+          make: "Jeep",
+          model: "Compass 4WD",
+          year: 2021,
+          price: 14000,
+          mileage: 35000,
+          condition: "Excellent",
+          url: "",
+          pinned: false
+        },
+        {
+          make: "Ford",
+          model: "Explorer AWD",
+          year: 2013,
+          price: 11000,
+          mileage: 112000,
+          condition: "Excellent",
+          url: "",
+          pinned: false
+        },
+        {
+          make: "Honda",
+          model: "Accord",
+          year: 2013,
+          price: 5800,
+          mileage: 215000,
+          condition: "Good",
+          url: "",
+          pinned: false
+        }
+      ];
+
+      // Import the listings
+      handleImport(JSON.stringify(sampleListings));
+
+      // Create and save the sample list separately
+      const sampleList = {
+        name: "Sample Cars",
+        listings: sampleListings
+      };
+      setSavedLists([sampleList]);
+      localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify([sampleList]));
+    } else {
+      // Load existing data if available
+      if (savedData) {
+        setSavedListings(JSON.parse(savedData));
+      }
+      if (savedListsData) {
+        setSavedLists(JSON.parse(savedListsData));
+      }
     }
-  }, []);
+  }, [handleImport]);
 
   const handleFormSubmit = (data: CarFormData) => {
     if (editingListing && editingListingIndex !== null) {
@@ -174,23 +239,6 @@ export function CarValueCalculator() {
     toast.success(`Deleted list "${name}"`);
   };
 
-  const handleImport = (data: string) => {
-    try {
-      const importedListings = JSON.parse(data);
-      if (Array.isArray(importedListings)) {
-        const newListings = [...savedListings, ...importedListings];
-        setSavedListings(newListings);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newListings));
-        toast.success("Listings imported successfully!");
-        setShowShareDialog(false);
-      } else {
-        toast.error("Invalid data format");
-      }
-    } catch (error) {
-      toast.error("Failed to import listings");
-    }
-  };
-
   return (
     <div className="w-full max-w-5xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -207,7 +255,11 @@ export function CarValueCalculator() {
         
         <div className="h-full flex flex-col">
           <div className="flex-1">
-            <ResultsDisplay carData={calculatedCar} />
+            <ResultsDisplay 
+              carData={calculatedCar} 
+              gasPrice={gasPrice}
+              onGasPriceChange={setGasPrice}
+            />
           </div>
         </div>
       </div>
@@ -222,8 +274,10 @@ export function CarValueCalculator() {
           onSaveList={handleSaveList}
           onLoadList={handleLoadList}
           onDeleteList={handleDeleteList}
+          onImportLists={handleImport}
           savedLists={savedLists}
           currentListName={currentListName}
+          gasPrice={gasPrice}
         />
       </div>
 

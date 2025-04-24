@@ -15,6 +15,7 @@ import { VehicleData, getVehicleModelData } from '@/utils/vehicleDataTypes';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { GasPriceModal } from "./GasPriceModal";
 
 interface SavedListingsProps {
   listings: CarFormData[];
@@ -29,6 +30,7 @@ interface SavedListingsProps {
   onImportLists?: (lists: { name: string; listings: CarFormData[] }[]) => void;
   savedLists?: { name: string; listings: CarFormData[] }[];
   currentListName?: string;
+  gasPrice: number;
 }
 
 type SortField = 'vehicle' | 'price' | 'mileage' | 'pricePerMile' | 'score';
@@ -327,7 +329,8 @@ export function SavedListings({
   onDeleteList,
   onImportLists,
   savedLists = [],
-  currentListName = ""
+  currentListName = "",
+  gasPrice
 }: SavedListingsProps) {
   const { toast } = useToast();
   // Component state
@@ -499,10 +502,9 @@ export function SavedListings({
     // Base cost per mile from purchase price
     const baseCostPerMile = price / remainingMiles;
     
-    // Add fuel cost if we have MPG data
-    if (modelData?.mpg.combined) {
+    // Add fuel cost if we have MPG data AND a positive gas price
+    if (modelData?.mpg.combined && gasPrice > 0) {
       const combinedMPG = parseFloat(modelData.mpg.combined);
-      const gasPrice = 3.50; // Default gas price if not set
       const fuelCostPerMile = gasPrice / combinedMPG;
       return baseCostPerMile + fuelCostPerMile;
     }
@@ -566,7 +568,7 @@ export function SavedListings({
             return 0;
         }
       });
-  }, [listings, searchQuery, priceRange, mileageRange, yearRange, ppmRange, sortField, sortDirection, mpgRange, selectedConditions]);
+  }, [listings, searchQuery, priceRange, mileageRange, yearRange, ppmRange, sortField, sortDirection, mpgRange, selectedConditions, gasPrice]);
 
   const getSortIcon = (field: SortField) => {
     if (field !== sortField) return null;
@@ -895,16 +897,16 @@ export function SavedListings({
           <CardTitle className="text-2xl">Saved Listings</CardTitle>
           <div className="flex items-center gap-2">
             {showListsView && (
-              <Button
-                variant="ghost"
-                size="icon"
+            <Button
+              variant="ghost"
+              size="icon"
                 onClick={() => setShowImportDialog(true)}
                 title="Import Lists"
                 className="flex items-center gap-2 min-w-[80px] justify-center text-white hover:text-blue-700"
               >
                 <Upload className="h-4 w-4" />
                 <span className="text-sm">Import</span>
-              </Button>
+            </Button>
             )}
             <Button
               variant="ghost"
@@ -1280,7 +1282,7 @@ export function SavedListings({
                                 <div className="flex items-center gap-2">
                                   <div className={`w-2.5 h-2.5 rounded-full ${getConditionColor(listing.condition)}`} />
                                   <div>
-                                    {listing.year} {listing.make} {listing.model}
+                                  {listing.year} {listing.make} {listing.model}
                                     {modelData && (
                                       <span className="text-sm text-gray-500 ml-2">
                                         {modelData.mpg.combined} mpg
