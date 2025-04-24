@@ -127,26 +127,41 @@ export function CarValueCalculator() {
     }
   };
 
-  const handleSaveList = (name: string) => {
-    const newList = {
-      name,
-      listings: savedListings
-    };
-    const updatedLists = [...savedLists, newList];
-    setSavedLists(updatedLists);
-    localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify(updatedLists));
-    setCurrentListName(name);
-    toast.success(`Saved list "${name}"`);
+  const handleSaveList = (name: string, listings: CarFormData[], existingIndex?: number) => {
+    if (existingIndex !== undefined) {
+      // Replace existing list
+      const updatedLists = savedLists.map((list, index) => 
+        index === existingIndex ? { name, listings } : list
+      );
+      setSavedLists(updatedLists);
+      localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify(updatedLists));
+      setCurrentListName(name);
+      toast.success(`Updated list "${name}"`);
+    } else {
+      // Add new list
+      const newList = { name, listings };
+      const updatedLists = [...savedLists, newList];
+      setSavedLists(updatedLists);
+      localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify(updatedLists));
+      setCurrentListName(name);
+      toast.success(`Saved list "${name}"`);
+    }
   };
 
-  const handleLoadList = (name: string) => {
-    const list = savedLists.find(l => l.name === name);
-    if (list) {
-      setSavedListings(list.listings);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list.listings));
-      setCurrentListName(name);
-      toast.success(`Loaded list "${name}"`);
-    }
+  const handleLoadList = (listings: CarFormData[], name: string) => {
+    // Update the current listings
+    setSavedListings([...listings]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(listings));
+    
+    // Update the current list name
+    setCurrentListName(name);
+    
+    // Reset editing state
+    setEditingListing(null);
+    setEditingListingIndex(null);
+    setCalculatedCar(null);
+    
+    toast.success(`Loaded list "${name}"`);
   };
 
   const handleDeleteList = (name: string) => {

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   calculateValueScore, 
@@ -10,12 +11,14 @@ import { Progress } from "@/components/ui/progress";
 import { AlertTriangle, InfoIcon, Fuel } from "lucide-react";
 import vehicleData from '@/data/vehicle-data.json';
 import { VehicleData, getVehicleModelData } from '@/utils/vehicleDataTypes';
+import { GasPriceModal } from "./GasPriceModal";
 
 interface ResultsDisplayProps {
   carData: CarFormData | null;
 }
 
 export function ResultsDisplay({ carData }: ResultsDisplayProps) {
+  const [gasPrice, setGasPrice] = useState(0);
   // Get EPA data if available
   const modelData = carData ? getVehicleModelData(
     vehicleData as VehicleData,
@@ -46,7 +49,18 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
     0;
   
   const costPerMile = carData && remainingMiles > 0 ? 
-    carData.price / remainingMiles : 
+    (() => {
+      // Base cost from purchase price
+      const baseCost = carData.price / remainingMiles;
+      
+      // Add fuel cost if we have gas price and MPG data
+      if (gasPrice > 0 && modelData?.mpg.combined) {
+        const fuelCostPerMile = gasPrice / modelData.mpg.combined;
+        return baseCost + fuelCostPerMile;
+      }
+      
+      return baseCost;
+    })() : 
     0;
   
   // Determine color based on rating
@@ -64,8 +78,14 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
 
   return (
     <Card className="w-full h-full shadow-lg border-blue-200">
-      <CardHeader className="bg-blue-700 text-white rounded-t-lg">
+      <CardHeader className="bg-blue-700 text-white rounded-t-lg flex flex-row items-center justify-between">
         <CardTitle className="text-center text-2xl">Value Analysis</CardTitle>
+        <div className="flex items-center">
+          {gasPrice > 0 && (
+            <span className="text-sm mr-2">${gasPrice.toFixed(2)}/gal</span>
+          )}
+          <GasPriceModal gasPrice={gasPrice} onGasPriceChange={setGasPrice} />
+        </div>
       </CardHeader>
       <CardContent className="p-6">
         {!carData ? (
@@ -89,10 +109,6 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
             {/* EPA Data Display */}
             {modelData && (
               <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2 mb-4">
-                  <Fuel className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-medium">EPA Data</h3>
-                </div>
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <p className="text-sm text-gray-600">City MPG</p>
@@ -126,6 +142,11 @@ export function ResultsDisplay({ carData }: ResultsDisplayProps) {
                 <p className="text-2xl font-bold text-blue-800 text-center">
                   ${costPerMile.toFixed(2)}
                 </p>
+                {gasPrice > 0 && modelData?.mpg.combined && (
+                  <p className="text-xs text-blue-600 text-center mt-1">
+                    Includes fuel cost at ${gasPrice.toFixed(2)}/gal
+                  </p>
+                )}
               </div>
             </div>
 

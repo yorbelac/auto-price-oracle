@@ -1,4 +1,4 @@
-import { Link as LinkIcon, ExternalLink, TrendingDown, TrendingUp, LayoutGrid, Table as TableIcon, Pencil, Trash2, ChevronUp, ChevronDown, Search, AlertTriangle, Car, DollarSign, Pin, SlidersHorizontal, Share2, List, Grid, Save, RotateCcw, Copy } from "lucide-react";
+import { Link as LinkIcon, ExternalLink, TrendingDown, TrendingUp, LayoutGrid, Table as TableIcon, Pencil, Trash2, ChevronUp, ChevronDown, Search, AlertTriangle, Car, DollarSign, Pin, SlidersHorizontal, Share2, List, Grid, Save, RotateCcw, Copy, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,7 +9,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import vehicleData from '@/data/vehicle-data.json';
+import { VehicleData, getVehicleModelData } from '@/utils/vehicleDataTypes';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 
 interface SavedListingsProps {
   listings: CarFormData[];
@@ -17,10 +22,11 @@ interface SavedListingsProps {
   onEdit: (listing: CarFormData, index: number) => void;
   onDelete: (indices: number[]) => void;
   onTogglePin: (index: number) => void;
-  onShare: () => void;
+  onShare: (listings?: CarFormData[]) => void;
   onSaveList: (name: string, listings: CarFormData[], existingIndex?: number) => void;
   onLoadList: (listings: CarFormData[], name: string) => void;
-  onDeleteList: (index: number) => void;
+  onDeleteList: (name: string) => void;
+  onImportLists?: (lists: { name: string; listings: CarFormData[] }[]) => void;
   savedLists?: { name: string; listings: CarFormData[] }[];
   currentListName?: string;
 }
@@ -41,6 +47,10 @@ interface FilterControlsProps {
   onPriceChange: (values: [number, number]) => void;
   mileageRange: [number, number];
   onMileageChange: (values: [number, number]) => void;
+  mpgRange: [number, number];
+  onMpgChange: (values: [number, number]) => void;
+  selectedConditions: string[];
+  onConditionChange: (conditions: string[]) => void;
   onClearFilters: () => void;
 }
 
@@ -61,6 +71,10 @@ const PPM_FIRST_BREAKPOINT = 0.30;
 const PPM_SECOND_BREAKPOINT = 1.00;
 const FINE_STEP = 0.01;
 const MEDIUM_STEP = 0.05;
+
+// Add new constants at the top with other constants
+const MPG_MIN = 0;
+const MPG_MAX = 60;
 
 // Utility functions moved outside component
 const sliderToPPM = (value: number): number => {
@@ -137,8 +151,20 @@ const FilterControls = memo(function FilterControls({
   onPriceChange,
   mileageRange,
   onMileageChange,
+  mpgRange,
+  onMpgChange,
+  selectedConditions,
+  onConditionChange,
   onClearFilters,
 }: FilterControlsProps) {
+  const handleConditionToggle = (condition: string) => {
+    onConditionChange(
+      selectedConditions.includes(condition)
+        ? selectedConditions.filter(c => c !== condition)
+        : [...selectedConditions, condition]
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
@@ -164,6 +190,39 @@ const FilterControls = memo(function FilterControls({
 
       <div className="space-y-6">
         <div className="space-y-2">
+          <Label className="text-center block">Condition</Label>
+          <div className="flex items-center justify-center gap-6">
+            <div 
+              className={`w-6 h-6 rounded-full bg-red-500 cursor-pointer transition-all hover:ring-2 hover:ring-offset-2 hover:ring-red-500 ${
+                selectedConditions.includes("Fair") 
+                  ? "opacity-100 ring-2 ring-offset-2 ring-red-500" 
+                  : "opacity-40"
+              }`}
+              onClick={() => handleConditionToggle("Fair")}
+              title="Fair"
+            />
+            <div 
+              className={`w-6 h-6 rounded-full bg-yellow-500 cursor-pointer transition-all hover:ring-2 hover:ring-offset-2 hover:ring-yellow-500 ${
+                selectedConditions.includes("Good") 
+                  ? "opacity-100 ring-2 ring-offset-2 ring-yellow-500" 
+                  : "opacity-40"
+              }`}
+              onClick={() => handleConditionToggle("Good")}
+              title="Good"
+            />
+            <div 
+              className={`w-6 h-6 rounded-full bg-green-500 cursor-pointer transition-all hover:ring-2 hover:ring-offset-2 hover:ring-green-500 ${
+                selectedConditions.includes("Excellent") 
+                  ? "opacity-100 ring-2 ring-offset-2 ring-green-500" 
+                  : "opacity-40"
+              }`}
+              onClick={() => handleConditionToggle("Excellent")}
+              title="Excellent"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
           <Label>Price per Mile Range</Label>
           <Slider
             min={0}
@@ -181,6 +240,23 @@ const FilterControls = memo(function FilterControls({
           <div className="flex justify-between text-sm text-gray-500">
             <span>${ppmRange[0].toFixed(2)}/mile</span>
             <span>${ppmRange[1].toFixed(2)}/mile</span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>MPG Range</Label>
+          <Slider
+            min={MPG_MIN}
+            max={MPG_MAX}
+            step={1}
+            value={mpgRange}
+            onValueChange={onMpgChange}
+            className="w-full"
+            colorRanges={[{ value: 100, color: 'rgb(0, 0, 0)' }]}
+          />
+          <div className="flex justify-between text-sm text-gray-500">
+            <span>{mpgRange[0]} MPG</span>
+            <span>{mpgRange[1]} MPG</span>
           </div>
         </div>
 
@@ -249,9 +325,11 @@ export function SavedListings({
   onSaveList, 
   onLoadList,
   onDeleteList,
+  onImportLists,
   savedLists = [],
   currentListName = ""
 }: SavedListingsProps) {
+  const { toast } = useToast();
   // Component state
   const [viewMode, setViewMode] = useState<'grid' | 'table'>(() => {
     if (typeof window !== 'undefined') {
@@ -273,6 +351,15 @@ export function SavedListings({
   const [newListName, setNewListName] = useState(currentListName);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [listToReplace, setListToReplace] = useState<{ index: number, name: string } | null>(null);
+  const [mpgRange, setMpgRange] = useState<[number, number]>([MPG_MIN, MPG_MAX]);
+  const [selectedConditions, setSelectedConditions] = useState<string[]>(["Fair", "Good", "Excellent"]);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importData, setImportData] = useState("");
+  const [importError, setImportError] = useState<string | null>(null);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [shareData, setShareData] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [listToDelete, setListToDelete] = useState<{ index: number; name: string } | null>(null);
 
   // Update newListName when currentListName changes
   useEffect(() => {
@@ -318,6 +405,8 @@ export function SavedListings({
     setMileageRange([MILEAGE_MIN, MILEAGE_MAX]);
     setPpmRange([PPM_MIN, PPM_MAX]);
     setYearRange([YEAR_MIN, YEAR_MAX]);
+    setMpgRange([MPG_MIN, MPG_MAX]);
+    setSelectedConditions(["Fair", "Good", "Excellent"]);
   }, []);
 
   // Memoized filter props
@@ -334,6 +423,10 @@ export function SavedListings({
     onPriceChange: handlePriceChange,
     mileageRange,
     onMileageChange: handleMileageChange,
+    mpgRange,
+    onMpgChange: setMpgRange,
+    selectedConditions,
+    onConditionChange: setSelectedConditions,
     onClearFilters: handleClearFilters,
   }), [
     searchQuery,
@@ -348,6 +441,8 @@ export function SavedListings({
     handlePriceChange,
     mileageRange,
     handleMileageChange,
+    mpgRange,
+    selectedConditions,
     handleClearFilters,
   ]);
 
@@ -394,10 +489,25 @@ export function SavedListings({
   };
 
   // Calculate price per remaining mile
-  const calculatePricePerRemainingMile = (price: number, mileage: number, make: string): number => {
+  const calculatePricePerRemainingMile = (price: number, mileage: number, make: string, year: string, model: string): number => {
     const lifetimeMiles = getEstimatedLifetimeMiles(make);
     const remainingMiles = Math.max(0, lifetimeMiles - mileage);
-    return remainingMiles > 0 ? price / remainingMiles : 0;
+    const modelData = getVehicleModelData(vehicleData as VehicleData, year, make, model);
+    
+    if (remainingMiles <= 0) return 0;
+
+    // Base cost per mile from purchase price
+    const baseCostPerMile = price / remainingMiles;
+    
+    // Add fuel cost if we have MPG data
+    if (modelData?.mpg.combined) {
+      const combinedMPG = parseFloat(modelData.mpg.combined);
+      const gasPrice = 3.50; // Default gas price if not set
+      const fuelCostPerMile = gasPrice / combinedMPG;
+      return baseCostPerMile + fuelCostPerMile;
+    }
+    
+    return baseCostPerMile;
   };
 
   // Calculate filtered and sorted listings
@@ -413,10 +523,18 @@ export function SavedListings({
         const matchesPrice = listing.price >= priceRange[0] && listing.price <= priceRange[1];
         const matchesMileage = listing.mileage >= mileageRange[0] && listing.mileage <= mileageRange[1];
         const matchesYear = listing.year >= yearRange[0] && listing.year <= yearRange[1];
-        const pricePerMile = calculatePricePerRemainingMile(listing.price, listing.mileage, listing.make);
+        const pricePerMile = calculatePricePerRemainingMile(listing.price, listing.mileage, listing.make, listing.year.toString(), listing.model);
         const matchesPPM = pricePerMile >= ppmRange[0] && pricePerMile <= ppmRange[1];
         
-        return matchesSearch && matchesPrice && matchesMileage && matchesPPM && matchesYear;
+        // Add MPG filter
+        const modelData = getVehicleModelData(vehicleData as VehicleData, listing.year.toString(), listing.make, listing.model);
+        const mpg = modelData ? parseFloat(modelData.mpg.combined) : 0;
+        const matchesMpg = mpg >= mpgRange[0] && mpg <= mpgRange[1];
+
+        // Add condition filter
+        const matchesCondition = selectedConditions.includes(listing.condition);
+        
+        return matchesSearch && matchesPrice && matchesMileage && matchesPPM && matchesYear && matchesMpg && matchesCondition;
       })
       .sort((a, b) => {
         // Sort pinned items to the top
@@ -434,8 +552,8 @@ export function SavedListings({
           case 'mileage':
             return (a.mileage - b.mileage) * direction;
           case 'pricePerMile':
-            const aPricePerMile = calculatePricePerRemainingMile(a.price, a.mileage, a.make);
-            const bPricePerMile = calculatePricePerRemainingMile(b.price, b.mileage, b.make);
+            const aPricePerMile = calculatePricePerRemainingMile(a.price, a.mileage, a.make, a.year.toString(), a.model);
+            const bPricePerMile = calculatePricePerRemainingMile(b.price, b.mileage, b.make, b.year.toString(), b.model);
             // Treat zero values (N/A) as infinity for sorting purposes
             const aValue = aPricePerMile === 0 ? Infinity : aPricePerMile;
             const bValue = bPricePerMile === 0 ? Infinity : bPricePerMile;
@@ -448,7 +566,7 @@ export function SavedListings({
             return 0;
         }
       });
-  }, [listings, searchQuery, priceRange, mileageRange, yearRange, ppmRange, sortField, sortDirection]);
+  }, [listings, searchQuery, priceRange, mileageRange, yearRange, ppmRange, sortField, sortDirection, mpgRange, selectedConditions]);
 
   const getSortIcon = (field: SortField) => {
     if (field !== sortField) return null;
@@ -468,6 +586,16 @@ export function SavedListings({
     }
   };
 
+  // Add condition color mapping
+  const getConditionColor = (condition: string) => {
+    switch(condition) {
+      case "Excellent": return "bg-green-500";
+      case "Good": return "bg-yellow-500";
+      case "Fair": return "bg-red-500";
+      default: return "bg-gray-500";
+    }
+  };
+
   const handleSaveList = () => {
     if (!onSaveList) {
       console.error('onSaveList prop is not provided');
@@ -483,14 +611,22 @@ export function SavedListings({
       } else {
         // No existing list, save directly
         onSaveList(newListName.trim(), listings);
+        toast({
+          title: "List saved",
+          description: `The list "${newListName.trim()}" has been saved.`
+        });
       }
     }
   };
 
   const handleConfirmReplace = () => {
     if (listToReplace) {
-      // Pass the existing index to onSaveList instead of deleting and creating new
+      // Pass the existing index to onSaveList for replacement
       onSaveList(listToReplace.name, listings, listToReplace.index);
+      toast({
+        title: "List replaced",
+        description: `The list "${listToReplace.name}" has been replaced with the current listings.`
+      });
       setShowReplaceConfirm(false);
       setListToReplace(null);
     }
@@ -510,35 +646,284 @@ export function SavedListings({
     }
   };
 
+  const handleImport = () => {
+    try {
+      const importedData = JSON.parse(importData);
+      
+      // Validate the imported data structure
+      if (!Array.isArray(importedData)) {
+        throw new Error("Invalid import data: Expected an array");
+      }
+
+      // Validate each list in the imported data
+      importedData.forEach((list, index) => {
+        if (!list.name || !Array.isArray(list.listings)) {
+          throw new Error(`Invalid list at index ${index}: Missing name or listings`);
+        }
+
+        // Validate each listing in the list
+        list.listings.forEach((listing: any, listingIndex: number) => {
+          if (!listing.make || !listing.model || !listing.year || 
+              typeof listing.price !== 'number' || typeof listing.mileage !== 'number') {
+            throw new Error(`Invalid listing in list "${list.name}" at index ${listingIndex}`);
+          }
+        });
+      });
+
+      // Process each imported list
+      importedData.forEach(list => {
+        // Check if a list with this name already exists
+        const existingListIndex = savedLists?.findIndex(existing => existing.name === list.name);
+        
+        if (existingListIndex !== undefined && existingListIndex >= 0) {
+          // If it exists, append a number to make it unique
+          let counter = 1;
+          let newName = list.name;
+          while (savedLists?.some(existing => existing.name === newName)) {
+            newName = `${list.name} (${counter})`;
+            counter++;
+          }
+          onSaveList(newName, list.listings);
+        } else {
+          // If it's a new name, save as is
+          onSaveList(list.name, list.listings);
+        }
+      });
+
+      setImportData("");
+      setImportError(null);
+      setShowImportDialog(false);
+      
+      toast({
+        title: "Lists imported successfully",
+        description: `Imported ${importedData.length} list${importedData.length === 1 ? '' : 's'}.`,
+      });
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : "Invalid import data");
+    }
+  };
+
+  const handleShare = (list: { name: string; listings: CarFormData[] }) => {
+    try {
+      // Create a clean version of the list without internal properties
+      const cleanListings = list.listings.map(listing => ({
+        make: listing.make,
+        model: listing.model,
+        year: listing.year,
+        price: listing.price,
+        mileage: listing.mileage,
+        condition: listing.condition,
+        url: listing.url,
+        pinned: listing.pinned
+      }));
+
+      const exportData = [{
+        name: list.name,
+        listings: cleanListings
+      }];
+
+      // Convert to pretty JSON string
+      const jsonStr = JSON.stringify(exportData, null, 2);
+      setShareData(jsonStr);
+      setShowShareDialog(true);
+      
+      if (onShare) {
+        onShare(list.listings);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error preparing data",
+        description: "Failed to prepare the list data for sharing.",
+      });
+      console.error('Error preparing data for share:', error);
+    }
+  };
+
+  // Add the import dialog
+  const importDialog = (
+    <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+      <DialogContent className="sm:max-w-[525px]">
+        <DialogHeader>
+          <DialogTitle>Import Saved Lists</DialogTitle>
+          <DialogDescription>
+            Paste your exported lists data below. The data should be in JSON format.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <Textarea
+            value={importData}
+            onChange={(e) => {
+              setImportData(e.target.value);
+              setImportError(null);
+            }}
+            placeholder="Paste your exported lists data here..."
+            className="min-h-[200px] font-mono text-sm"
+          />
+          {importError && (
+            <p className="text-red-500 text-sm mt-2">{importError}</p>
+          )}
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowImportDialog(false);
+              setImportData("");
+              setImportError(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="default"
+            onClick={handleImport}
+            disabled={!importData.trim()}
+          >
+            Import
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // Add the share dialog
+  const shareDialog = (
+    <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Share List</DialogTitle>
+          <DialogDescription>
+            Copy this data to share your list. Others can import it using the Import button.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <div className="relative">
+            <Textarea
+              value={shareData}
+              readOnly
+              className="min-h-[300px] font-mono text-sm bg-gray-50 pr-12"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              onClick={() => {
+                try {
+                  navigator.clipboard.writeText(shareData);
+                  toast({
+                    title: "Copied to clipboard",
+                    description: "The list data has been copied and is ready to share.",
+                  });
+                } catch (error) {
+                  toast({
+                    variant: "destructive",
+                    title: "Failed to copy",
+                    description: "Please manually select and copy the text.",
+                  });
+                }
+              }}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            onClick={() => setShowShareDialog(false)}
+          >
+            Close
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // Add delete confirmation dialog
+  const deleteConfirmDialog = (
+    <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Delete List</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this list? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          {listToDelete && (
+            <p className="text-sm text-gray-500">
+              List to delete: <span className="font-semibold">{listToDelete.name}</span>
+            </p>
+          )}
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowDeleteConfirm(false);
+              setListToDelete(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => {
+              if (listToDelete) {
+                onDeleteList(listToDelete.name);
+                toast({
+                  title: "List deleted",
+                  description: `The list "${listToDelete.name}" has been deleted.`
+                });
+                setShowDeleteConfirm(false);
+                setListToDelete(null);
+              }
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <Card className="shadow-lg border-blue-200">
       <CardHeader className="bg-blue-700 text-white rounded-t-lg">
         <div className="flex justify-between items-center">
           <CardTitle className="text-2xl">Saved Listings</CardTitle>
           <div className="flex items-center gap-2">
+            {showListsView && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowImportDialog(true)}
+                title="Import Lists"
+                className="flex items-center gap-2 min-w-[80px] justify-center text-white hover:text-blue-700"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="text-sm">Import</span>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowListsView(!showListsView)}
               title={showListsView ? "Show Listings" : "Show Lists"}
-              className="flex items-center gap-2 min-w-[80px] justify-center"
+              className="flex items-center gap-2 min-w-[80px] justify-center text-white hover:text-blue-700"
             >
               {showListsView ? <Grid className="h-4 w-4" /> : <List className="h-4 w-4" />}
               <span className="text-sm">{showListsView ? "Listings" : "Lists"}</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onShare}
-              title="Share Listings"
-            >
-              <Share2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="p-4">
+        {importDialog}
+        {shareDialog}
+        {deleteConfirmDialog}
         {showListsView ? (
           <div className="space-y-4">
             {savedLists.length === 0 ? (
@@ -578,8 +963,21 @@ export function SavedListings({
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => onDeleteList(index)}
+                              onClick={() => handleShare(list)}
+                              title="Share List"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Share2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setListToDelete({ index, name: list.name });
+                                setShowDeleteConfirm(true);
+                              }}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              title="Delete List"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -682,10 +1080,18 @@ export function SavedListings({
                 {viewMode === 'grid' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredAndSortedListings.map((listing, index) => {
+                      const modelData = getVehicleModelData(vehicleData as VehicleData, listing.year.toString(), listing.make, listing.model);
                       const valueScore = calculateValueScore(listing.price, listing.mileage, listing.make);
                       const rating = getRatingFromScore(valueScore);
                       const maxMileage = getEstimatedLifetimeMiles(listing.make);
                       const remainingMiles = Math.max(0, maxMileage - listing.mileage);
+                      const totalCostPerMile = calculatePricePerRemainingMile(
+                        listing.price,
+                        listing.mileage,
+                        listing.make,
+                        listing.year.toString(),
+                        listing.model
+                      );
 
                       return (
                         <div key={`${listing.make}-${listing.model}-${listing.year}-${listing.originalIndex}`} 
@@ -697,13 +1103,16 @@ export function SavedListings({
                         >
                           <div className={`p-4 ${listing.pinned ? 'bg-red-50' : 'bg-blue-50'}`}>
                             <div className="flex justify-between items-start">
-                              <div>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-2.5 h-2.5 rounded-full ${getConditionColor(listing.condition)}`} />
                                 <h3 className="font-semibold text-lg text-gray-900">
                                   {listing.year} {listing.make} {listing.model}
+                                  {modelData && (
+                                    <span className="text-sm font-normal text-gray-500 ml-2">
+                                      {modelData.mpg.combined} mpg
+                                    </span>
+                                  )}
                                 </h3>
-                                <p className="text-sm text-gray-600 mt-1">
-                                  {formatNumber(listing.mileage)} miles
-                                </p>
                               </div>
                               <div className="flex items-start gap-2">
                                 <Button
@@ -726,7 +1135,7 @@ export function SavedListings({
                           </div>
 
                           <div className="p-4 space-y-4">
-                            <div className="flex justify-between items-center">
+                            <div className="grid grid-cols-2 gap-4 mt-4">
                               <div>
                                 <p className="text-sm font-medium text-gray-600">Price</p>
                                 <p className="text-lg font-semibold text-gray-900">{formatCurrency(listing.price)}</p>
@@ -737,16 +1146,40 @@ export function SavedListings({
                               </div>
                             </div>
 
-                            <div className="flex justify-between items-center">
+                            <div className="grid grid-cols-2 gap-4 mt-4">
                               <div>
                                 <p className="text-sm font-medium text-gray-600">Remaining Miles</p>
                                 <p className="text-gray-900">{formatNumber(remainingMiles)}</p>
                               </div>
                               <div className="text-right">
-                                <p className="text-sm font-medium text-gray-600">Cost/Mile</p>
-                                <p className="text-gray-900">${(listing.price / remainingMiles).toFixed(2)}</p>
+                                <p className="text-sm font-medium text-gray-600">Total Cost/Mile</p>
+                                <p className="text-gray-900">
+                                  ${totalCostPerMile.toFixed(2)}
+                                </p>
+                                {modelData && (
+                                  <p className="text-xs text-gray-500">Includes fuel</p>
+                                )}
                               </div>
                             </div>
+
+                            {modelData && (
+                              <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                                <div className="grid grid-cols-3 gap-2 text-center">
+                                  <div>
+                                    <p className="text-xs text-gray-600">City</p>
+                                    <p className="text-sm font-semibold">{modelData.mpg.city} MPG</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-600">Highway</p>
+                                    <p className="text-sm font-semibold">{modelData.mpg.highway} MPG</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-gray-600">Combined</p>
+                                    <p className="text-sm font-semibold">{modelData.mpg.combined} MPG</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
 
                             <div className="flex items-center justify-end gap-2 pt-2">
                               {listing.url && (
@@ -812,20 +1245,25 @@ export function SavedListings({
                           </TableHead>
                           <TableHead className="cursor-pointer bg-blue-50 font-bold" onClick={() => handleSort('pricePerMile')}>
                             <div className="flex items-center gap-2">
-                              Price/Mile {getSortIcon('pricePerMile')}
+                              Total Cost/Mile {getSortIcon('pricePerMile')}
                             </div>
                           </TableHead>
                           <TableHead>Links</TableHead>
-                          <TableHead>
+                          <TableHead className="w-[80px] text-center">
                             Actions
                           </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedListings.map((listing) => {
-                          const pricePerMile = calculatePricePerRemainingMile(listing.price, listing.mileage, listing.make);
-                          const lifetimeMiles = getEstimatedLifetimeMiles(listing.make);
-                          const remainingMiles = Math.max(0, lifetimeMiles - listing.mileage);
+                          const modelData = getVehicleModelData(vehicleData as VehicleData, listing.year.toString(), listing.make, listing.model);
+                          const totalCostPerMile = calculatePricePerRemainingMile(
+                            listing.price,
+                            listing.mileage,
+                            listing.make,
+                            listing.year.toString(),
+                            listing.model
+                          );
 
                           return (
                             <TableRow 
@@ -840,12 +1278,27 @@ export function SavedListings({
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  {listing.year} {listing.make} {listing.model}
+                                  <div className={`w-2.5 h-2.5 rounded-full ${getConditionColor(listing.condition)}`} />
+                                  <div>
+                                    {listing.year} {listing.make} {listing.model}
+                                    {modelData && (
+                                      <span className="text-sm text-gray-500 ml-2">
+                                        {modelData.mpg.combined} mpg
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </TableCell>
                               <TableCell>{formatCurrency(listing.price)}</TableCell>
                               <TableCell>{formatNumber(listing.mileage)}</TableCell>
-                              <TableCell>{pricePerMile > 0 ? `$${pricePerMile.toFixed(2)}` : 'N/A'}</TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span>${totalCostPerMile.toFixed(2)}</span>
+                                  {modelData && (
+                                    <span className="text-xs text-gray-500">Includes fuel</span>
+                                  )}
+                                </div>
+                              </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2 justify-end">
                                   {listing.url && (
@@ -880,7 +1333,7 @@ export function SavedListings({
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 justify-end">
                                   <Button
                                     variant="ghost"
                                     size="icon"

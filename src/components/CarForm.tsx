@@ -16,6 +16,7 @@ export interface CarFormData {
   mileage: number;
   url?: string;
   pinned?: boolean;
+  condition: "Fair" | "Good" | "Excellent";
 }
 
 interface CarFormProps {
@@ -33,7 +34,8 @@ export function CarForm({ onSubmit, onChange, onCancel, initialData }: CarFormPr
     price: 0,
     mileage: 0,
     url: "",
-    pinned: false
+    pinned: false,
+    condition: "Good"
   };
 
   const [formData, setFormData] = useState<CarFormData>(defaultFormState);
@@ -69,7 +71,8 @@ export function CarForm({ onSubmit, onChange, onCancel, initialData }: CarFormPr
           price: initialData.price || 0,
           mileage: initialData.mileage || 0,
           url: initialData.url || "",
-          pinned: initialData.pinned || false
+          pinned: initialData.pinned || false,
+          condition: initialData.condition || "Good"
         }));
       }, 0);
     } else {
@@ -117,31 +120,55 @@ export function CarForm({ onSubmit, onChange, onCancel, initialData }: CarFormPr
       </CardHeader>
       <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="year">Year</Label>
-            <Select
-              value={formData.year?.toString()}
-              onValueChange={(value) => {
-                setFormData(prev => ({
-                  ...prev,
-                  year: parseInt(value),
-                  // Clear make and model when year changes
-                  make: "",
-                  model: ""
-                }));
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select year" />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="year">Year</Label>
+              <Select
+                value={formData.year?.toString()}
+                onValueChange={(value) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    year: parseInt(value),
+                    // Clear make and model when year changes
+                    make: "",
+                    model: ""
+                  }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="condition">Condition</Label>
+              <Select
+                value={formData.condition}
+                onValueChange={(value: "Fair" | "Good" | "Excellent") => {
+                  setFormData(prev => ({
+                    ...prev,
+                    condition: value
+                  }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select condition" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Fair">Fair</SelectItem>
+                  <SelectItem value="Good">Good</SelectItem>
+                  <SelectItem value="Excellent">Excellent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
