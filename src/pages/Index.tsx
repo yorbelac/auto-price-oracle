@@ -21,15 +21,9 @@ const Index = () => {
                 Calculate the true value of used cars based on price, mileage, and estimated lifespan
               </p>
             </div>
-            <a
-              href="https://www.buymeacoffee.com/workpool"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg transition-colors"
-            >
-              <span className="text-xl">☕</span>
-              <span className="text-sm font-medium hidden md:inline">Buy me a coffee</span>
-            </a>
+            <div className="flex items-center gap-4">
+              <button className="share-button hidden">Share</button>
+            </div>
           </div>
         </div>
       </header>
@@ -39,7 +33,9 @@ const Index = () => {
           <h2 className="text-2xl font-bold text-center mb-8 text-gray-800">
             Car Value Calculator
           </h2>
-          <CarValueCalculator />
+          <div className="car-form">
+            <CarValueCalculator />
+          </div>
         </section>
       </main>
 
@@ -49,6 +45,19 @@ const Index = () => {
           <ExplanatoryModal />
         </div>
       </footer>
+
+      {/* Floating action buttons bottom right */}
+      <div id="floating-actions" className="fixed bottom-4 right-4 z-50 flex flex-row items-end gap-3">
+        <a
+          href="https://www.buymeacoffee.com/workpool"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg transition-colors shadow-lg border border-yellow-500"
+        >
+          <span className="text-sm">☕</span>
+          <span className="text-sm font-medium hidden md:inline">Buy me a coffee</span>
+        </a>
+      </div>
     </div>
   );
 };

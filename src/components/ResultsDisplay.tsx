@@ -196,13 +196,13 @@ export function ResultsDisplay({ carData, gasPrice, onGasPriceChange }: ResultsD
                   <div>
                     <p className="text-sm text-gray-600">Combined MPG</p>
                     <p className="text-lg font-semibold">{modelData.mpg.combined}</p>
-                  </div>
+              </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
                   Vehicle Type: {modelData.type}
                 </p>
-              </div>
-            )}
+                </div>
+              )}
 
             {/* Value Metrics */}
             <div className="grid grid-cols-2 gap-6 mb-8">

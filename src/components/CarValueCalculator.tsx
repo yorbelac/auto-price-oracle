@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { CarForm, CarFormData } from "./CarForm";
 import { ResultsDisplay } from "./ResultsDisplay";
 import { SavedListings } from "./SavedListings";
+import { GuidedTour } from "./GuidedTour";
 import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -26,83 +27,9 @@ export function CarValueCalculator() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareData, setShareData] = useState("");
   const [gasPrice, setGasPrice] = useState(0);
-
-  const handleImport = useCallback((data: string) => {
-    try {
-      const importedListings = JSON.parse(data);
-      if (Array.isArray(importedListings)) {
-        const newListings = [...savedListings, ...importedListings];
-        setSavedListings(newListings);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newListings));
-        toast.success("Listings imported successfully!");
-        setShowShareDialog(false);
-      } else {
-        toast.error("Invalid data format");
-      }
-    } catch (error) {
-      toast.error("Failed to import listings");
-    }
-  }, [savedListings]);
-
-  useEffect(() => {
-    const savedData = localStorage.getItem(STORAGE_KEY);
-    const savedListsData = localStorage.getItem(LISTS_STORAGE_KEY);
-
-    if (!savedData && !savedListsData) {
-      // Create sample car listings
-      const sampleListings = [
-        {
-          make: "Jeep",
-          model: "Compass 4WD",
-          year: 2021,
-          price: 14000,
-          mileage: 35000,
-          condition: "Excellent",
-          url: "",
-          pinned: false
-        },
-        {
-          make: "Ford",
-          model: "Explorer AWD",
-          year: 2013,
-          price: 11000,
-          mileage: 112000,
-          condition: "Excellent",
-          url: "",
-          pinned: false
-        },
-        {
-          make: "Honda",
-          model: "Accord",
-          year: 2013,
-          price: 5800,
-          mileage: 215000,
-          condition: "Good",
-          url: "",
-          pinned: false
-        }
-      ];
-
-      // Import the listings
-      handleImport(JSON.stringify(sampleListings));
-
-      // Create and save the sample list separately
-      const sampleList = {
-        name: "Sample Cars",
-        listings: sampleListings
-      };
-      setSavedLists([sampleList]);
-      localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify([sampleList]));
-    } else {
-      // Load existing data if available
-      if (savedData) {
-        setSavedListings(JSON.parse(savedData));
-      }
-      if (savedListsData) {
-        setSavedLists(JSON.parse(savedListsData));
-      }
-    }
-  }, [handleImport]);
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(() => {
+    return !localStorage.getItem(STORAGE_KEY) && !localStorage.getItem(LISTS_STORAGE_KEY);
+  });
 
   const handleFormSubmit = (data: CarFormData) => {
     if (editingListing && editingListingIndex !== null) {
@@ -174,24 +101,6 @@ export function CarValueCalculator() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newListings));
   };
 
-  const handleShare = async (indices: number[]) => {
-    const selectedListings = savedListings.filter((_, index) => indices.includes(index));
-    const text = selectedListings.map(listing => 
-      `${listing.year} ${listing.make} ${listing.model}\n` +
-      `Price: $${listing.price.toLocaleString()}\n` +
-      `Mileage: ${listing.mileage.toLocaleString()}\n` +
-      (listing.url ? `Listing: ${listing.url}\n` : '') +
-      '---'
-    ).join('\n\n');
-
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success("Copied to clipboard!");
-    } catch (err) {
-      toast.error("Failed to copy to clipboard");
-    }
-  };
-
   const handleSaveList = (name: string, listings: CarFormData[], existingIndex?: number) => {
     if (existingIndex !== undefined) {
       // Replace existing list
@@ -239,8 +148,73 @@ export function CarValueCalculator() {
     toast.success(`Deleted list "${name}"`);
   };
 
+  useEffect(() => {
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    const savedListsData = localStorage.getItem(LISTS_STORAGE_KEY);
+
+    if (!savedData && !savedListsData) {
+      // Set flag for guided tour
+      localStorage.setItem('shouldShowGuidedTour', 'true');
+      // Create sample car listings
+      const sampleListings = [
+        {
+          make: "Jeep",
+          model: "Compass 4WD",
+          year: 2021,
+          price: 14000,
+          mileage: 35000,
+          condition: "Excellent",
+          url: "",
+          pinned: false
+        },
+        {
+          make: "Ford",
+          model: "Explorer AWD",
+          year: 2013,
+          price: 11000,
+          mileage: 112000,
+          condition: "Excellent",
+          url: "",
+          pinned: false
+        },
+        {
+          make: "Honda",
+          model: "Accord",
+          year: 2013,
+          price: 5800,
+          mileage: 215000,
+          condition: "Good",
+          url: "",
+          pinned: false
+        }
+      ] as const;
+
+      // Import the listings (inline logic)
+      const newListings = [...savedListings, ...sampleListings];
+      setSavedListings(newListings);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newListings));
+
+      // Create and save the sample list separately
+      const sampleList = {
+        name: "Sample Cars",
+        listings: [...sampleListings]
+      };
+      setSavedLists([sampleList]);
+      localStorage.setItem(LISTS_STORAGE_KEY, JSON.stringify([sampleList]));
+    } else {
+      // Load existing data if available
+      if (savedData) {
+        setSavedListings(JSON.parse(savedData));
+      }
+      if (savedListsData) {
+        setSavedLists(JSON.parse(savedListsData));
+      }
+    }
+  }, [savedListings]);
+
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <div className="container mx-auto px-4 py-8">
+      <GuidedTour isFirstTimeUser={isFirstTimeUser} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="flex flex-col">
           <div className="flex-1">
@@ -270,11 +244,9 @@ export function CarValueCalculator() {
           onEdit={handleEditListing}
           onDelete={handleDeleteListings}
           onTogglePin={handleTogglePin}
-          onShare={handleShare}
           onSaveList={handleSaveList}
           onLoadList={handleLoadList}
           onDeleteList={handleDeleteList}
-          onImportLists={handleImport}
           savedLists={savedLists}
           currentListName={currentListName}
           gasPrice={gasPrice}
