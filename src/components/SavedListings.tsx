@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { GasPriceModal } from "./GasPriceModal";
+import { trackSaveList, trackImportList, trackExportList } from '@/utils/analytics';
 
 interface SavedListingsProps {
   listings: CarFormData[];
@@ -613,6 +614,7 @@ export function SavedListings({
       } else {
         // No existing list, save directly
         onSaveList(newListName.trim(), listings);
+        trackSaveList(newListName.trim(), listings.length);
         toast({
           title: "List saved",
           description: `The list "${newListName.trim()}" has been saved.`
@@ -696,6 +698,9 @@ export function SavedListings({
       setImportError(null);
       setShowImportDialog(false);
       
+      // Track the import event
+      trackImportList(importedData.length);
+      
       toast({
         title: "Lists imported successfully",
         description: `Imported ${importedData.length} list${importedData.length === 1 ? '' : 's'}.`,
@@ -728,6 +733,9 @@ export function SavedListings({
       const jsonStr = JSON.stringify(exportData, null, 2);
       setShareData(jsonStr);
       setShowShareDialog(true);
+      
+      // Track the export event
+      trackExportList(list.name, list.listings.length);
       
       if (onShare) {
         onShare(list.listings);

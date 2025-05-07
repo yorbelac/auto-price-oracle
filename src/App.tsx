@@ -2,12 +2,27 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import { GuidedTour } from '@/components/GuidedTour';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CarValueCalculator } from "@/components/CarValueCalculator";
 import { SavedListings } from "@/components/SavedListings";
+import { initGA, trackPageView } from "@/utils/analytics";
+
+// Initialize GA
+initGA();
+
+// Component to track page views
+const PageTracker = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location]);
+
+  return null;
+};
 
 const queryClient = new QueryClient();
 
@@ -25,6 +40,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <HashRouter>
+          <PageTracker />
           <GuidedTour isFirstTimeUser={isFirstTimeUser} />
           <Routes>
             <Route path="/" element={<Index />} />
