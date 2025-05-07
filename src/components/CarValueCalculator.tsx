@@ -3,6 +3,7 @@ import { CarForm, CarFormData } from "./CarForm";
 import { ResultsDisplay } from "./ResultsDisplay";
 import { SavedListings } from "./SavedListings";
 import { GuidedTour } from "./GuidedTour";
+import { FAQ } from "./FAQ";
 import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -148,6 +149,69 @@ export function CarValueCalculator() {
     toast.success(`Deleted list "${name}"`);
   };
 
+  const handleShare = (listings?: CarFormData[]) => {
+    try {
+      const dataToShare = listings || savedListings;
+      const cleanListings = dataToShare.map(listing => ({
+        make: listing.make,
+        model: listing.model,
+        year: listing.year,
+        price: listing.price,
+        mileage: listing.mileage,
+        condition: listing.condition,
+        url: listing.url,
+        pinned: listing.pinned
+      }));
+
+      const exportData = [{
+        name: currentListName || "My Listings",
+        listings: cleanListings
+      }];
+
+      const jsonStr = JSON.stringify(exportData, null, 2);
+      setShareData(jsonStr);
+      setShowShareDialog(true);
+    } catch (error) {
+      toast.error("Failed to prepare data for sharing");
+      console.error('Error preparing data for share:', error);
+    }
+  };
+
+  const handleImport = (data: string) => {
+    try {
+      const importedData = JSON.parse(data);
+      
+      if (!Array.isArray(importedData)) {
+        throw new Error("Invalid import data: Expected an array");
+      }
+
+      importedData.forEach((list, index) => {
+        if (!list.name || !Array.isArray(list.listings)) {
+          throw new Error(`Invalid list at index ${index}: Missing name or listings`);
+        }
+
+        list.listings.forEach((listing: any, listingIndex: number) => {
+          if (!listing.make || !listing.model || !listing.year || 
+              typeof listing.price !== 'number' || typeof listing.mileage !== 'number') {
+            throw new Error(`Invalid listing in list "${list.name}" at index ${listingIndex}`);
+          }
+        });
+      });
+
+      // Import the first list's listings
+      if (importedData.length > 0) {
+        const firstList = importedData[0];
+        setSavedListings(firstList.listings);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(firstList.listings));
+        setCurrentListName(firstList.name);
+        toast.success(`Imported list "${firstList.name}"`);
+      }
+    } catch (error) {
+      toast.error("Failed to import data");
+      console.error('Error importing data:', error);
+    }
+  };
+
   useEffect(() => {
     const savedData = localStorage.getItem(STORAGE_KEY);
     const savedListsData = localStorage.getItem(LISTS_STORAGE_KEY);
@@ -244,6 +308,7 @@ export function CarValueCalculator() {
           onEdit={handleEditListing}
           onDelete={handleDeleteListings}
           onTogglePin={handleTogglePin}
+          onShare={handleShare}
           onSaveList={handleSaveList}
           onLoadList={handleLoadList}
           onDeleteList={handleDeleteList}
@@ -254,14 +319,15 @@ export function CarValueCalculator() {
       </div>
 
       <footer className="mt-12 mb-8 text-center text-gray-500 border-t border-gray-100 pt-8">
-        <div className="max-w-2xl mx-auto">
+        <FAQ />
+        <div className="max-w-2xl mx-auto mt-8">
           <p className="text-sm">
             Have feedback, found an issue, or want to suggest an improvement?{" "}
             <a 
-              href="mailto:yorbelac@gmail.com?subject=Carpool Feedback" 
+              href="mailto:support@workpool.app?subject=Carpool Feedback" 
               className="text-blue-600 hover:text-blue-800 hover:underline"
             >
-              Email me
+              Email us
             </a>
           </p>
         </div>
